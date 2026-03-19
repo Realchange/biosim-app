@@ -50,6 +50,9 @@ export function ParameterPanel() {
           {selectedNeuron.model === 'lif'
             ? <LIFParamsPanel neuronId={selectedNeuron.id} params={selectedNeuron.params as LIFParams} studentMode={studentMode} />
             : <HHParamsPanel  neuronId={selectedNeuron.id} params={selectedNeuron.params as HHParams}  studentMode={studentMode} />}
+          <div style={{ color: '#8b949e', fontSize: 9, marginTop: 8, lineHeight: 1.4 }}>
+            💡 Klicke auf Soma oder Dendrit im Neuron um eine Messelektrode zu setzen.
+          </div>
         </div>
       )}
       {selectedSynapse && (

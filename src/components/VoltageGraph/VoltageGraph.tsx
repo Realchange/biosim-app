@@ -45,7 +45,7 @@ export function VoltageGraph({ traces, running, currentT = 0 }: Props) {
 
   return (
     <div className={styles.container}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
         <rect x={MARGIN.left} y={MARGIN.top} width={innerW} height={innerH}
           fill="#0d1117" rx={3} />
 
@@ -61,7 +61,7 @@ export function VoltageGraph({ traces, running, currentT = 0 }: Props) {
           )
         })}
 
-        <text x={MARGIN.left + innerW / 2} y={H - 4}
+        <text x={MARGIN.left + innerW / 2} y={MARGIN.top + innerH + 16}
           fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
 
         {traces.map(tr => {

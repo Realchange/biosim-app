@@ -1,4 +1,4 @@
-.container { display: flex; flex-direction: column; background: #161b22; }
+.container { display: flex; flex-direction: column; background: #161b22; flex-shrink: 0; }
 .placeholder {
   display: flex; align-items: center; justify-content: center;
   min-height: 200px; color: #8b949e; font-size: 12px;

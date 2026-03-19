@@ -37,6 +37,7 @@ export function NeuronSVG({
         fill="#f0883e" stroke={hl('dend1') ? '#fff' : '#d29922'}
         strokeWidth={hl('dend1') ? 3 : 1.5}
         data-compartment="dend1"
+        className={styles.compartmentHit}
         onClick={compartmentClick('dend1')} style={{ cursor: 'pointer' }} />
       <line x1="-46" y1="0" x2="-72" y2="-20" stroke={d2c} strokeWidth={2.5} />
       <line x1="-46" y1="0" x2="-72" y2="20" stroke={d2c} strokeWidth={2.5} />
@@ -44,11 +45,13 @@ export function NeuronSVG({
         fill="#388bfd" stroke={hl('dend2') ? '#fff' : '#58a6ff'}
         strokeWidth={hl('dend2') ? 3 : 1.5}
         data-compartment="dend2"
+        className={styles.compartmentHit}
         onClick={compartmentClick('dend2')} style={{ cursor: 'pointer' }} />
       <circle cx="-72" cy="20" r={hl('dend2') ? 5 : 3.5}
         fill="#388bfd" stroke={hl('dend2') ? '#fff' : '#58a6ff'}
         strokeWidth={hl('dend2') ? 3 : 1.5}
         data-compartment="dend2"
+        className={styles.compartmentHit}
         onClick={compartmentClick('dend2')} style={{ cursor: 'pointer' }} />
       {([[-72,-20,-90,-32],[-72,-20,-90,-12],[-72,20,-90,8],[-72,20,-90,32]] as number[][]).map(([x1,y1,x2,y2], i) => (
         <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={d3c} strokeWidth={1.5}
@@ -59,6 +62,7 @@ export function NeuronSVG({
           fill="#8957e5" stroke={hl('dend3') ? '#fff' : '#a371f7'}
           strokeWidth={hl('dend3') ? 2.5 : 1.5}
           data-compartment="dend3"
+          className={styles.compartmentHit}
           onClick={compartmentClick('dend3')} style={{ cursor: 'pointer' }} />
       ))}
 
@@ -68,6 +72,7 @@ export function NeuronSVG({
         stroke={hl('soma') ? '#fff' : '#58a6ff'}
         strokeWidth={hl('soma') ? 3 : 2}
         data-compartment="soma"
+        className={styles.compartmentHit}
         onClick={compartmentClick('soma')} style={{ cursor: 'pointer' }} />
 
       {/* Axon */}

@@ -27,12 +27,13 @@ export function SimControls() {
         }
         const currentElectrodes = useNetworkStore.getState().electrodes
         for (const el of currentElectrodes) {
-          const neuron = msg.neurons.find(n => n.id === el.neuronId)
-          if (!neuron) continue
-          const V = el.compartment === 'soma'
-            ? (msg.voltages[el.neuronId] ?? -70)
-            : (neuron.compartments?.[el.compartment]?.V ?? -70)
-          appendTracePoints(el.neuronId, el.compartment, msg.t, V)
+          const vArr = el.compartment === 'soma'
+            ? msg.voltages[el.neuronId]
+            : msg.compartmentVoltages[el.neuronId]?.[el.compartment as 'dend1' | 'dend2' | 'dend3']
+          if (!vArr) continue
+          for (let pi = 0; pi < vArr.length; pi++) {
+            appendTracePoints(el.neuronId, el.compartment, msg.times[pi], vArr[pi] ?? -70)
+          }
         }
       }
       if (msg.type === 'done') {
