@@ -90,11 +90,21 @@ export function networkStep(
       const params = neuron.params as HHParams
       const prev   = hhStates.get(neuron.id)
       const prevSomaV = prev?.soma.V ?? DEFAULT_HH_COMPARTMENT.V
-      const soma   = prev?.soma  ?? { ...DEFAULT_HH_COMPARTMENT }
-      const dends  = prev ? { dend1: prev.dend1, dend2: prev.dend2, dend3: prev.dend3 } : undefined
-      const I_syn_dend = { dend1: synI.dend1, dend2: synI.dend2, dend3: synI.dend3 }
       synapticCurrents[neuron.id] = synI.soma
-      const next   = hhStep(soma, params, synI.soma, dt, dends, I_syn_dend)
+      // HH Forward-Euler is only stable at dt ≤ ~0.04 ms.
+      // Sub-step 4× so the reported step (typically 0.1 ms) stays stable.
+      const HH_SUB_STEPS = 4
+      const subDt = dt / HH_SUB_STEPS
+      const subSyn = { soma: synI.soma / HH_SUB_STEPS, dend1: synI.dend1 / HH_SUB_STEPS, dend2: synI.dend2 / HH_SUB_STEPS, dend3: synI.dend3 / HH_SUB_STEPS }
+      let next = prev ?? {
+        soma: { ...DEFAULT_HH_COMPARTMENT },
+        dend1: { ...DEFAULT_HH_COMPARTMENT },
+        dend2: { ...DEFAULT_HH_COMPARTMENT },
+        dend3: { ...DEFAULT_HH_COMPARTMENT },
+      }
+      for (let s = 0; s < HH_SUB_STEPS; s++) {
+        next = hhStep(next.soma, params, subSyn.soma, subDt, next, { dend1: subSyn.dend1, dend2: subSyn.dend2, dend3: subSyn.dend3 })
+      }
       hhStates.set(neuron.id, next)
       voltages[neuron.id] = next.soma.V
       // Upward zero-crossing detection: fires only on rising phase of action potential
