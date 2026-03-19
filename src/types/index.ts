@@ -99,7 +99,7 @@ export const DEFAULT_LIF_PARAMS: LIFParams = {
 }
 
 export const DEFAULT_HH_PARAMS: HHParams = {
-  I_stim: 10, E_Na: 50, E_K: -77, E_Ca: 120, E_leak: -65,
+  I_stim: 10, E_Na: 50, E_K: -77, E_Ca: 120, E_leak: -54.387,
   g_Na: 120, g_K: 36, g_Ca: 0.3, g_leak: 0.3, C_m: 1.0, g_core: 0.1,
 }
 
