@@ -9,7 +9,7 @@ import styles from './NetworkCanvas.module.css'
 export function NetworkCanvas() {
   const { neurons, synapses, mode, selectedId, electrodes,
           addNeuron, moveNeuron, setSelected, addSynapse, removeSynapse,
-          addElectrode, removeElectrode } = useNetworkStore()
+          removeNeuron, addElectrode, removeElectrode } = useNetworkStore()
   const svgRef = useRef<SVGSVGElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
@@ -32,6 +32,10 @@ export function NetworkCanvas() {
       setConnectingFrom(null)
       return
     }
+    if (e.shiftKey && mode === 'editor') {
+      setConnectingFrom(id)
+      return
+    }
     setSelected(id)
   }
 
@@ -46,7 +50,7 @@ export function NetworkCanvas() {
       if (!selectedId) return
       const isSynapse = synapses.some(s => s.id === selectedId)
       if (isSynapse) removeSynapse(selectedId)
-      else { useNetworkStore.getState().removeNeuron(selectedId) }
+      else { removeNeuron(selectedId) }
       setSelected(null)
     }
   }
@@ -55,7 +59,18 @@ export function NetworkCanvas() {
     <svg ref={svgRef} className={styles.canvas}
          tabIndex={0} onKeyDown={handleKeyDown}
          onDoubleClick={handleDblClick}
-         onClick={() => { setSelected(null); setConnectingFrom(null) }}>
+         onClick={() => { setSelected(null); setConnectingFrom(null) }}
+         onMouseMove={e => { if (dragging) moveNeuron(dragging, svgPoint(e)) }}
+         onMouseUp={() => setDragging(null)}>
+
+      <defs>
+        <marker id="arrow-excitatory" markerWidth={8} markerHeight={8} refX={6} refY={3} orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#3fb950" />
+        </marker>
+        <marker id="arrow-inhibitory" markerWidth={8} markerHeight={8} refX={6} refY={3} orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#f85149" />
+        </marker>
+      </defs>
 
       {connectingFrom && (
         <text x={10} y={20} fill="#d29922" fontSize={12}>
@@ -77,9 +92,7 @@ export function NetworkCanvas() {
           <g key={neuron.id}
              transform={`translate(${neuron.position.x},${neuron.position.y})`}
              onClick={e => handleNeuronClick(neuron.id, e)}
-             onMouseDown={e => { if (!e.shiftKey) setDragging(neuron.id) }}
-             onMouseMove={e => { if (dragging === neuron.id) moveNeuron(neuron.id, svgPoint(e)) }}
-             onMouseUp={() => setDragging(null)}>
+             onMouseDown={e => { if (!e.shiftKey) setDragging(neuron.id) }}>
             <NeuronSVG
               neuron={neuron}
               selected={neuron.id === selectedId}

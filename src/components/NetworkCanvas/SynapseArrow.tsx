@@ -16,17 +16,12 @@ export function SynapseArrow({ synapse, neurons, selected, onClick }: Props) {
   const color = synapse.type === 'excitatory' ? '#3fb950' : '#f85149'
   return (
     <g onClick={onClick} style={{ cursor: 'pointer' }}>
-      <defs>
-        <marker id={`arrow-${synapse.id}`} markerWidth={8} markerHeight={8} refX={6} refY={3} orient="auto">
-          <path d="M0,0 L0,6 L8,3 z" fill={color} />
-        </marker>
-      </defs>
       {/* Invisible wide hit area */}
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={12} />
       <line x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={color} strokeWidth={selected ? 3 : 1.5}
         strokeDasharray={synapse.type === 'inhibitory' ? '6,3' : undefined}
-        markerEnd={`url(#arrow-${synapse.id})`} />
+        markerEnd={`url(#arrow-${synapse.type})`} />
     </g>
   )
 }
