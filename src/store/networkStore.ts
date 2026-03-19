@@ -129,7 +129,7 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     neurons: network.neurons,
     synapses: network.synapses,
     simulationParams: network.simulation,
-    selectedId: null,
+    selectedId: network.neurons.length > 0 ? network.neurons[0].id : null,
     electrodes: network.neurons.length > 0
       ? [{ neuronId: network.neurons[0].id, compartment: 'soma' }]
       : [],
