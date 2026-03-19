@@ -127,4 +127,106 @@ describe('networkStep', () => {
     expect(typeof result.voltages['hh1']).toBe('number')
     expect(Number.isFinite(result.voltages['hh1'])).toBe(true)
   })
+
+  it('HH neuron fires exactly once per action potential (upward zero-crossing detection)', () => {
+    const dt = 0.1
+    // Drive HH neuron with large stimulus to elicit a spike
+    const hhNeuron: Neuron = {
+      id: 'hh1',
+      position: { x: 0, y: 0 },
+      model: 'hodgkin-huxley',
+      params: { ...DEFAULT_HH_PARAMS, I_stim: 10 },
+    }
+    let neurons = [hhNeuron]
+    let spiked = false
+    let consecutiveTrueCount = 0
+    let maxConsecutiveTrue = 0
+    let currentConsecutive = 0
+
+    for (let i = 0; i < 2000; i++) {
+      const result = networkStep(neurons, [], dt)
+      neurons = result.neurons
+      if (result.spikes['hh1']) {
+        spiked = true
+        currentConsecutive++
+        if (currentConsecutive > maxConsecutiveTrue) maxConsecutiveTrue = currentConsecutive
+      } else {
+        currentConsecutive = 0
+      }
+    }
+
+    // The neuron must have spiked at least once
+    expect(spiked).toBe(true)
+    // With upward zero-crossing detection, a single AP should never produce
+    // two consecutive true values in spikes (that would indicate V > 0 fired twice in a row)
+    expect(maxConsecutiveTrue).toBe(1)
+  })
+
+  it('synapse targeting dend1 produces larger dend1 voltage change than a soma-targeted synapse', () => {
+    const dt = 0.1
+    const conductance = 50
+    const deliveryTime = 1 // ms — 10 steps at dt=0.1
+
+    // Helper: run a single scenario (src + tgt with given synapse targetCompartment),
+    // drive src to spike, then run deliveryTime/dt more steps, return tgt's dend1 voltage
+    const runScenario = (targetCompartment: 'dend1' | 'soma'): number => {
+      resetSimulationState()
+      const src: Neuron = {
+        id: 'src',
+        position: { x: 0, y: 0 },
+        model: 'hodgkin-huxley',
+        params: { ...DEFAULT_HH_PARAMS, I_stim: 10 },
+      }
+      const tgt: Neuron = {
+        id: 'tgt',
+        position: { x: 0, y: 0 },
+        model: 'hodgkin-huxley',
+        params: { ...DEFAULT_HH_PARAMS, I_stim: 0 },
+      }
+      const synapse: Synapse = {
+        id: 'syn',
+        sourceId: 'src',
+        targetId: 'tgt',
+        targetCompartment,
+        type: 'excitatory',
+        conductance,
+        deliveryTime,
+      }
+
+      let neurons = [src, tgt]
+      let srcSpikedStep = -1
+
+      // Run until source spikes (up to 500 steps = 50ms)
+      for (let i = 0; i < 500; i++) {
+        const result = networkStep(neurons, [synapse], dt)
+        neurons = result.neurons
+        if (result.spikes['src']) {
+          srcSpikedStep = i
+          break
+        }
+      }
+
+      // Spike must have occurred
+      if (srcSpikedStep < 0) throw new Error('Source HH neuron did not spike')
+
+      // Run exactly deliveryTime/dt more steps so the synaptic event is delivered
+      const deliverySteps = Math.round(deliveryTime / dt)
+      for (let i = 0; i < deliverySteps; i++) {
+        const result = networkStep(neurons, [synapse], dt)
+        neurons = result.neurons
+      }
+
+      // Return target dend1 voltage after delivery
+      const tgt2 = neurons.find(n => n.id === 'tgt')!
+      return (tgt2.compartments as Record<string, { V: number }>)['dend1'].V
+    }
+
+    const dend1WhenTargetingDend1 = runScenario('dend1')
+    const dend1WhenTargetingSoma  = runScenario('soma')
+
+    // When synaptic current is injected directly into dend1, dend1 voltage should be
+    // higher than when the same current goes to soma and only reaches dend1 via weak axial coupling.
+    // This test fails if routing is broken (e.g., all current goes to soma regardless of targetCompartment).
+    expect(dend1WhenTargetingDend1).toBeGreaterThan(dend1WhenTargetingSoma)
+  })
 })
