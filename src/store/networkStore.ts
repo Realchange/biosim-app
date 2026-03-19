@@ -9,6 +9,8 @@ import {
 
 // Voltage trace: per-electrode, array of [t, V] pairs
 export type VoltageTrace = { neuronId: string; compartment: Compartment; points: [number, number][] }
+// Current trace: per-electrode neuron, array of [t, I_syn] pairs
+export type CurrentTrace = { neuronId: string; points: [number, number][] }
 
 interface SimState {
   running: boolean
@@ -24,6 +26,7 @@ interface NetworkState {
   selectedId: string | null
   electrodes: Electrode[]
   traces: VoltageTrace[]
+  currentTraces: CurrentTrace[]
   sim: SimState
 
   // Actions
@@ -39,17 +42,18 @@ interface NetworkState {
   addElectrode: (neuronId: string, compartment: Compartment) => void
   removeElectrode: (neuronId: string, compartment: Compartment) => void
   appendTracePoints: (neuronId: string, compartment: Compartment, t: number, V: number) => void
+  appendCurrentPoints: (neuronId: string, t: number, I: number) => void
   clearTraces: () => void
   setSim: (patch: Partial<SimState>) => void
   loadNetwork: (network: Network) => void
   getInitialState: () => NetworkState
 }
 
-const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'sim'> = {
+const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'sim'> = {
   neurons: [], synapses: [],
   simulationParams: { length: 100, step: 0.1 },
   mode: 'presentation',
-  selectedId: null, electrodes: [], traces: [],
+  selectedId: null, electrodes: [], traces: [], currentTraces: [],
   sim: { running: false, paused: false, t: 0 },
 }
 
@@ -72,6 +76,7 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     synapses: s.synapses.filter(sy => sy.sourceId !== id && sy.targetId !== id),
     electrodes: s.electrodes.filter(e => e.neuronId !== id),
     traces: s.traces.filter(tr => tr.neuronId !== id),
+    currentTraces: s.currentTraces.filter(ct => ct.neuronId !== id),
   })),
 
   updateNeuron: (id, patch) => set(s => ({
@@ -105,13 +110,23 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     if (exists) return s
     const electrode: Electrode = { neuronId, compartment }
     const trace: VoltageTrace = { neuronId, compartment, points: [] }
-    return { electrodes: [...s.electrodes, electrode], traces: [...s.traces, trace] }
+    // Add current trace only if this is the first electrode for this neuron
+    const hasCurrentTrace = s.currentTraces.some(ct => ct.neuronId === neuronId)
+    const newCurrentTraces = hasCurrentTrace
+      ? s.currentTraces
+      : [...s.currentTraces, { neuronId, points: [] }]
+    return { electrodes: [...s.electrodes, electrode], traces: [...s.traces, trace], currentTraces: newCurrentTraces }
   }),
 
-  removeElectrode: (neuronId, compartment) => set(s => ({
-    electrodes: s.electrodes.filter(e => !(e.neuronId === neuronId && e.compartment === compartment)),
-    traces: s.traces.filter(tr => !(tr.neuronId === neuronId && tr.compartment === compartment)),
-  })),
+  removeElectrode: (neuronId, compartment) => set(s => {
+    const remaining = s.electrodes.filter(e => !(e.neuronId === neuronId && e.compartment === compartment))
+    const stillHasNeuron = remaining.some(e => e.neuronId === neuronId)
+    return {
+      electrodes: remaining,
+      traces: s.traces.filter(tr => !(tr.neuronId === neuronId && tr.compartment === compartment)),
+      currentTraces: stillHasNeuron ? s.currentTraces : s.currentTraces.filter(ct => ct.neuronId !== neuronId),
+    }
+  }),
 
   appendTracePoints: (neuronId, compartment, t, V) => set(s => ({
     traces: s.traces.map(tr =>
@@ -121,7 +136,16 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     ),
   })),
 
-  clearTraces: () => set(s => ({ traces: s.traces.map(tr => ({ ...tr, points: [] })) })),
+  appendCurrentPoints: (neuronId, t, I) => set(s => ({
+    currentTraces: s.currentTraces.map(ct =>
+      ct.neuronId === neuronId ? { ...ct, points: [...ct.points, [t, I]] } : ct
+    ),
+  })),
+
+  clearTraces: () => set(s => ({
+    traces: s.traces.map(tr => ({ ...tr, points: [] })),
+    currentTraces: s.currentTraces.map(ct => ({ ...ct, points: [] })),
+  })),
 
   setSim: (patch) => set(s => ({ sim: { ...s.sim, ...patch } })),
 
@@ -135,6 +159,9 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
       : [],
     traces: network.neurons.length > 0
       ? [{ neuronId: network.neurons[0].id, compartment: 'soma', points: [] }]
+      : [],
+    currentTraces: network.neurons.length > 0
+      ? [{ neuronId: network.neurons[0].id, points: [] }]
       : [],
   }),
 }))

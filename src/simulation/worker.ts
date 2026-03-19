@@ -14,6 +14,7 @@ export type WorkerOutMessage =
       t: number
       times: number[]                                // all timestamps in this batch
       voltages: Record<string, number[]>             // neuronId -> soma voltage at each timestep
+      currents: Record<string, number[]>             // neuronId -> synaptic current (nA) at each timestep
       compartmentVoltages: Record<string, {          // HH neurons: dendritic voltages
         dend1: number[]
         dend2: number[]
@@ -51,6 +52,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
 
       const times: number[] = []
       const voltages: Record<string, number[]> = {}
+      const currents: Record<string, number[]> = {}
       const compartmentVoltages: Record<string, { dend1: number[]; dend2: number[]; dend3: number[] }> = {}
       let lastSpikes: Record<string, boolean> = {}
 
@@ -64,6 +66,11 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
         for (const [id, v] of Object.entries(result.voltages)) {
           if (!voltages[id]) voltages[id] = []
           voltages[id].push(v)
+        }
+
+        for (const [id, I] of Object.entries(result.synapticCurrents)) {
+          if (!currents[id]) currents[id] = []
+          currents[id].push(I)
         }
 
         for (const neuron of result.neurons) {
@@ -83,6 +90,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
         t,
         times,
         voltages,
+        currents,
         compartmentVoltages,
         spikes: lastSpikes,
         neurons,

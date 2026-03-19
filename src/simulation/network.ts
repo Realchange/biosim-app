@@ -7,8 +7,9 @@ import type { HHAllCompartments } from './hodgkin-huxley'
 
 export interface NetworkStepResult {
   neurons: Neuron[]
-  voltages: Record<string, number>   // soma voltage per neuron id
-  spikes: Record<string, boolean>    // true if neuron fired this step
+  voltages: Record<string, number>        // soma voltage per neuron id
+  spikes: Record<string, boolean>         // true if neuron fired this step
+  synapticCurrents: Record<string, number> // total synaptic input current (nA) per neuron
 }
 
 // Per-compartment synaptic current breakdown
@@ -67,17 +68,18 @@ export function networkStep(
   const currentT = stepCount * dt
   const voltages: Record<string, number> = {}
   const spikes:   Record<string, boolean> = {}
+  const synapticCurrents: Record<string, number> = {}
   const updatedNeurons: Neuron[] = []
 
   for (const neuron of neurons) {
-    const synapticCurrents = drainSynapticCurrent(neuron.id, currentT)
+    const synI = drainSynapticCurrent(neuron.id, currentT)
 
     if (neuron.model === 'lif') {
       const params = neuron.params as LIFParams
       const state  = lifStates.get(neuron.id) ?? { ...DEFAULT_LIF_STATE }
-      // Add synaptic current as additional input on top of neuron's own I_stim
       // LIF neurons: all compartment input intentionally collapsed to soma
-      const totalSyn = synapticCurrents.soma + synapticCurrents.dend1 + synapticCurrents.dend2 + synapticCurrents.dend3
+      const totalSyn = synI.soma + synI.dend1 + synI.dend2 + synI.dend3
+      synapticCurrents[neuron.id] = totalSyn
       const augmented = { ...params, I_stim: params.I_stim + totalSyn }
       const next   = lifStep(state, augmented, dt)
       lifStates.set(neuron.id, next)
@@ -90,8 +92,9 @@ export function networkStep(
       const prevSomaV = prev?.soma.V ?? DEFAULT_HH_COMPARTMENT.V
       const soma   = prev?.soma  ?? { ...DEFAULT_HH_COMPARTMENT }
       const dends  = prev ? { dend1: prev.dend1, dend2: prev.dend2, dend3: prev.dend3 } : undefined
-      const I_syn_dend = { dend1: synapticCurrents.dend1, dend2: synapticCurrents.dend2, dend3: synapticCurrents.dend3 }
-      const next   = hhStep(soma, params, synapticCurrents.soma, dt, dends, I_syn_dend)
+      const I_syn_dend = { dend1: synI.dend1, dend2: synI.dend2, dend3: synI.dend3 }
+      synapticCurrents[neuron.id] = synI.soma
+      const next   = hhStep(soma, params, synI.soma, dt, dends, I_syn_dend)
       hhStates.set(neuron.id, next)
       voltages[neuron.id] = next.soma.V
       // Upward zero-crossing detection: fires only on rising phase of action potential
@@ -121,5 +124,5 @@ export function networkStep(
     )
   }
 
-  return { neurons: updatedNeurons, voltages, spikes }
+  return { neurons: updatedNeurons, voltages, spikes, synapticCurrents }
 }

@@ -5,7 +5,7 @@ import styles from './SimControls.module.css'
 
 export function SimControls() {
   const { sim,
-          setSim, clearTraces, appendTracePoints, updateNeuron } = useNetworkStore()
+          setSim, clearTraces, appendTracePoints, appendCurrentPoints, updateNeuron } = useNetworkStore()
   const workerRef = useRef<Worker | null>(null)
 
   const start = () => {
@@ -25,7 +25,8 @@ export function SimControls() {
             updateNeuron(neuron.id, { compartments: neuron.compartments })
           }
         }
-        const currentElectrodes = useNetworkStore.getState().electrodes
+        const { electrodes: currentElectrodes } = useNetworkStore.getState()
+        const seenCurrentNeurons = new Set<string>()
         for (const el of currentElectrodes) {
           const vArr = el.compartment === 'soma'
             ? msg.voltages[el.neuronId]
@@ -33,6 +34,16 @@ export function SimControls() {
           if (!vArr) continue
           for (let pi = 0; pi < vArr.length; pi++) {
             appendTracePoints(el.neuronId, el.compartment, msg.times[pi], vArr[pi] ?? -70)
+          }
+          // Append current trace once per neuron (not per electrode compartment)
+          if (!seenCurrentNeurons.has(el.neuronId)) {
+            seenCurrentNeurons.add(el.neuronId)
+            const iArr = msg.currents[el.neuronId]
+            if (iArr) {
+              for (let pi = 0; pi < iArr.length; pi++) {
+                appendCurrentPoints(el.neuronId, msg.times[pi], iArr[pi])
+              }
+            }
           }
         }
       }

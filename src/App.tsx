@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { useNetworkStore } from './store/networkStore'
 import { ParameterPanel }  from './components/ParameterPanel/ParameterPanel'
 import { NetworkCanvas }   from './components/NetworkCanvas/NetworkCanvas'
 import { VoltageGraph }    from './components/VoltageGraph/VoltageGraph'
 import { SimControls }     from './components/SimControls/SimControls'
+import { GraphModal }      from './components/GraphModal/GraphModal'
 import { downloadNetwork, uploadNetwork } from './utils/fileIO'
 import styles from './App.module.css'
 
 export default function App() {
   const { neurons, synapses, simulationParams, traces, sim, loadNetwork } = useNetworkStore()
+  const [modalOpen, setModalOpen] = useState(false)
 
   const handleSave = () => {
     downloadNetwork({ version: 1, name: 'simulation', neurons, synapses, simulation: simulationParams })
@@ -38,8 +41,9 @@ export default function App() {
           <NetworkCanvas />
           <SimControls />
         </div>
-        <VoltageGraph traces={traces} running={sim.running} currentT={sim.t} />
+        <VoltageGraph traces={traces} running={sim.running} currentT={sim.t} onExpand={() => setModalOpen(true)} />
       </div>
+      <GraphModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )
 }

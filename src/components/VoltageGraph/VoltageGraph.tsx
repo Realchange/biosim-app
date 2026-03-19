@@ -13,13 +13,14 @@ interface Props {
   traces: VoltageTrace[]
   running: boolean
   currentT?: number
+  onExpand?: () => void
 }
 
 function vToY(v: number): number {
   return MARGIN.top + (H - MARGIN.top - MARGIN.bottom) * (1 - (v - V_MIN) / (V_MAX - V_MIN))
 }
 
-export function VoltageGraph({ traces, running, currentT = 0 }: Props) {
+export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props) {
   const innerW = W - MARGIN.left - MARGIN.right
   const innerH = H - MARGIN.top - MARGIN.bottom
 
@@ -45,6 +46,12 @@ export function VoltageGraph({ traces, running, currentT = 0 }: Props) {
 
   return (
     <div className={styles.container}>
+      {onExpand && (
+        <div className={styles.header}>
+          <span className={styles.headerTitle}>Spannung (mV)</span>
+          <button className={styles.expandBtn} onClick={onExpand} title="Vollbild öffnen">⛶</button>
+        </div>
+      )}
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
         <rect x={MARGIN.left} y={MARGIN.top} width={innerW} height={innerH}
           fill="#0d1117" rx={3} />
