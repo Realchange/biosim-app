@@ -1,0 +1,5 @@
+.controls { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: #161b22; border-top: 1px solid #30363d; }
+.primary { background: #238636; color: white; }
+.controls button { border: 1px solid #30363d; background: #21262d; color: #c9d1d9; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+.time { color: #8b949e; font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }
