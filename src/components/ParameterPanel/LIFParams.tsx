@@ -22,13 +22,13 @@ export function LIFParamsPanel({ neuronId, params, studentMode }: Props) {
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
           <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>
           <input type="range" min={f.min} max={f.max} step={f.step}
-            value={(params as Record<string, number>)[f.key as string]}
+            value={params[f.key]}
             style={{ width: '100%' }}
             onChange={e => updateNeuron(neuronId, {
               params: { ...params, [f.key]: parseFloat(e.target.value) }
             })} />
           <span style={{ color: '#c9d1d9', fontSize: 10 }}>
-            {(params as Record<string, number>)[f.key as string]}
+            {params[f.key]}
           </span>
         </label>
       ))}

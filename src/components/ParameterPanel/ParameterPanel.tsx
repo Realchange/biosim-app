@@ -39,7 +39,7 @@ export function ParameterPanel() {
       {selectedNeuron && (
         <div className={styles.section}>
           <div className={styles.label}>Parameter — {selectedNeuron.model === 'lif' ? 'LIF' : 'HH'}</div>
-          {!studentMode && (
+          {mode === 'editor' && (
             <select value={selectedNeuron.model}
               style={{ marginBottom: 8, width: '100%', background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4 }}
               onChange={e => useNetworkStore.getState().updateNeuron(selectedNeuron.id, { model: e.target.value as 'lif' | 'hodgkin-huxley' })}>

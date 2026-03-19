@@ -4,7 +4,7 @@ import type { WorkerOutMessage } from '../../simulation/worker'
 import styles from './SimControls.module.css'
 
 export function SimControls() {
-  const { neurons, synapses, sim,
+  const { sim,
           setSim, clearTraces, appendTracePoints, updateNeuron } = useNetworkStore()
   const workerRef = useRef<Worker | null>(null)
 
@@ -40,8 +40,8 @@ export function SimControls() {
       }
     }
 
-    const { simulationParams } = useNetworkStore.getState()
-    worker.postMessage({ type: 'start', neurons, synapses, simulation: simulationParams })
+    const { simulationParams, neurons: currentNeurons, synapses: currentSynapses } = useNetworkStore.getState()
+    worker.postMessage({ type: 'start', neurons: currentNeurons, synapses: currentSynapses, simulation: simulationParams })
   }
 
   const pause = () => {

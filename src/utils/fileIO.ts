@@ -35,14 +35,32 @@ export function uploadNetwork(): Promise<Network> {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json,.biosim.json'
+
+    let settled = false
+    const settle = (fn: () => void) => {
+      if (settled) return
+      settled = true
+      window.removeEventListener('focus', onFocus)
+      fn()
+    }
+
+    const onFocus = () => {
+      // Give the change event time to fire before treating as cancel
+      setTimeout(() => {
+        settle(() => reject(new Error('Abgebrochen')))
+      }, 300)
+    }
+
     input.onchange = async () => {
       const file = input.files?.[0]
-      if (!file) return reject(new Error('Keine Datei ausgewählt'))
+      if (!file) return settle(() => reject(new Error('Keine Datei ausgewählt')))
       try {
         const text = await file.text()
-        resolve(deserializeNetwork(text))
-      } catch (e) { reject(e) }
+        settle(() => resolve(deserializeNetwork(text)))
+      } catch (e) { settle(() => reject(e)) }
     }
+
+    window.addEventListener('focus', onFocus)
     input.click()
   })
 }
