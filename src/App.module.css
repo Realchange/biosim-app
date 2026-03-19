@@ -1,0 +1,6 @@
+.app { display: flex; flex-direction: column; height: 100vh; background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.header { display: flex; align-items: center; gap: 12px; padding: 6px 16px; background: #161b22; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.logo { font-weight: bold; color: #c9d1d9; }
+.headerBtn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.main { display: flex; flex: 1; overflow: hidden; }
+.canvasArea { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
