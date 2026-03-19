@@ -47,9 +47,9 @@ describe('networkStep', () => {
 
   it('synaptic input from firing source causes target LIF to fire sooner', () => {
     const dt = 0.1
-    // Source fires vigorously; target subthreshold alone but receives excitatory synapse
+    // Source fires vigorously; target fires on its own (I_stim=3.0) but synapse makes it fire sooner
     const sourceFiring: Neuron = makeLIF('src', 100)
-    const targetAlone: Neuron  = makeLIF('tgt', 0.5)  // DEFAULT_LIF_PARAMS.I_stim — fires slowly on its own
+    const targetAlone: Neuron  = makeLIF('tgt', 3.0)  // fires alone at ~69 steps
 
     // Run target alone to record when it first spikes
     resetSimulationState()
@@ -68,7 +68,7 @@ describe('networkStep', () => {
       targetId: 'tgt',
       targetCompartment: 'soma',
       type: 'excitatory',
-      conductance: 5,
+      conductance: 10,
       deliveryTime: 1,
     }
     let stepsWithSyn = 0

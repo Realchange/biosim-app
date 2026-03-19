@@ -5,7 +5,7 @@ import type { Compartment } from '../../types'
 import styles from './VoltageGraph.module.css'
 
 const W = 280, H = 220
-const MARGIN = { top: 10, right: 10, bottom: 24, left: 36 }
+const MARGIN = { top: 10, right: 10, bottom: 32, left: 36 }
 const V_MIN = -90, V_MAX = 60
 const WINDOW_MS = 100
 
@@ -61,7 +61,20 @@ export function VoltageGraph({ traces, running, currentT = 0 }: Props) {
           )
         })}
 
-        <text x={MARGIN.left + innerW / 2} y={MARGIN.top + innerH + 16}
+        {[0, 0.25, 0.5, 0.75, 1].map(frac => {
+          const t = tMin + (tMax - tMin) * frac
+          const x = tToX(t)
+          return (
+            <g key={frac}>
+              <line x1={x} y1={MARGIN.top + innerH} x2={x} y2={MARGIN.top + innerH + 4}
+                stroke="#8b949e" strokeWidth={0.5} />
+              <text x={x} y={MARGIN.top + innerH + 13}
+                fill="#8b949e" fontSize={9} textAnchor="middle">{Math.round(t)}</text>
+            </g>
+          )
+        })}
+
+        <text x={MARGIN.left + innerW / 2} y={MARGIN.top + innerH + 28}
           fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
 
         {traces.map(tr => {
