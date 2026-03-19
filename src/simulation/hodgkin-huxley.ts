@@ -54,11 +54,13 @@ function stepCompartment(
 export function hhStep(
   soma: HHCompartmentState,
   params: HHParams,
-  I_synaptic: number,   // total synaptic current to soma this step
+  I_synaptic: number,   // synaptic current to soma this step
   dt: number,
-  dendrites?: { dend1: HHCompartmentState; dend2: HHCompartmentState; dend3: HHCompartmentState }
+  dendrites?: { dend1: HHCompartmentState; dend2: HHCompartmentState; dend3: HHCompartmentState },
+  I_syn_dend?: { dend1: number; dend2: number; dend3: number }  // per-dendrite synaptic currents
 ): HHAllCompartments {
   const d = dendrites ?? { dend1: { ...DEFAULT_HH_COMPARTMENT }, dend2: { ...DEFAULT_HH_COMPARTMENT }, dend3: { ...DEFAULT_HH_COMPARTMENT } }
+  const sd = I_syn_dend ?? { dend1: 0, dend2: 0, dend3: 0 }
   const gc = params.g_core
   // Axial coupling: current flows from soma → dend1 → dend2 → dend3
   const I_soma_to_d1 = gc * (soma.V  - d.dend1.V)
@@ -66,8 +68,8 @@ export function hhStep(
   const I_d2_to_d3   = gc * (d.dend2.V - d.dend3.V)
   return {
     soma:  stepCompartment(soma,    params, params.I_stim + I_synaptic - I_soma_to_d1, dt),
-    dend1: stepCompartment(d.dend1, params, I_soma_to_d1 - I_d1_to_d2,                dt),
-    dend2: stepCompartment(d.dend2, params, I_d1_to_d2   - I_d2_to_d3,                dt),
-    dend3: stepCompartment(d.dend3, params, I_d2_to_d3,                                dt),
+    dend1: stepCompartment(d.dend1, params, I_soma_to_d1 - I_d1_to_d2 + sd.dend1,    dt),
+    dend2: stepCompartment(d.dend2, params, I_d1_to_d2   - I_d2_to_d3 + sd.dend2,    dt),
+    dend3: stepCompartment(d.dend3, params, I_d2_to_d3                + sd.dend3,     dt),
   }
 }

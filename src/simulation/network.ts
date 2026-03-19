@@ -1,5 +1,5 @@
 // src/simulation/network.ts
-import { Neuron, Synapse } from '../types'
+import { Neuron, Synapse, LIFParams, HHParams } from '../types'
 import { lifStep, DEFAULT_LIF_STATE, LIFState } from './lif'
 import { hhStep, DEFAULT_HH_COMPARTMENT, HHAllCompartments } from './hodgkin-huxley'
 
@@ -9,31 +9,45 @@ export interface NetworkStepResult {
   spikes: Record<string, boolean>    // true if neuron fired this step
 }
 
+// Per-compartment synaptic current breakdown
+interface SynapticCurrents {
+  soma: number
+  dend1: number
+  dend2: number
+  dend3: number
+}
+
 // Internal runtime state kept outside Neuron (not serialized)
 // Note: these are module-level but reset via resetSimulationState() before each run
 const lifStates = new Map<string, LIFState>()
 const hhStates  = new Map<string, HHAllCompartments>()
 // Synaptic delay queue: Map<targetNeuronId, Array<{deliveryT, current, compartment}>>
 const synapticQueue = new Map<string, Array<{ deliveryT: number; current: number; compartment: string }>>()
-let currentT = 0
+let stepCount = 0
 
 export function resetSimulationState() {
   lifStates.clear()
   hhStates.clear()
   synapticQueue.clear()
-  currentT = 0
+  stepCount = 0
 }
 
-// Drain all synaptic events due at currentT, return total current
-function drainSynapticCurrent(neuronId: string): number {
-  const queue = synapticQueue.get(neuronId) ?? []
-  let total = 0
+// Drain all synaptic events due at currentT, return per-compartment currents
+function drainSynapticCurrent(neuronId: string, currentT: number): SynapticCurrents {
+  const queue = synapticQueue.get(neuronId)
+  if (!queue || queue.length === 0) return { soma: 0, dend1: 0, dend2: 0, dend3: 0 }
+  const result: SynapticCurrents = { soma: 0, dend1: 0, dend2: 0, dend3: 0 }
   const remaining = queue.filter(ev => {
-    if (ev.deliveryT <= currentT) { total += ev.current; return false }
+    if (ev.deliveryT <= currentT) {
+      const comp = ev.compartment as keyof SynapticCurrents
+      if (comp in result) result[comp] += ev.current
+      else result.soma += ev.current
+      return false
+    }
     return true
   })
   synapticQueue.set(neuronId, remaining)
-  return total
+  return result
 }
 
 function enqueueSynapticEvent(targetId: string, deliveryT: number, current: number, compartment: string) {
@@ -47,33 +61,39 @@ export function networkStep(
   synapses: Synapse[],
   dt: number
 ): NetworkStepResult {
-  currentT += dt
+  stepCount += 1
+  const currentT = stepCount * dt
   const voltages: Record<string, number> = {}
   const spikes:   Record<string, boolean> = {}
   const updatedNeurons: Neuron[] = []
 
   for (const neuron of neurons) {
-    const I_syn = drainSynapticCurrent(neuron.id)
+    const synapticCurrents = drainSynapticCurrent(neuron.id, currentT)
 
     if (neuron.model === 'lif') {
-      const params = neuron.params as import('../types').LIFParams
+      const params = neuron.params as LIFParams
       const state  = lifStates.get(neuron.id) ?? { ...DEFAULT_LIF_STATE }
       // Add synaptic current as additional input on top of neuron's own I_stim
-      const augmented = { ...params, I_stim: params.I_stim + I_syn }
+      // LIF neurons: all compartment input intentionally collapsed to soma
+      const totalSyn = synapticCurrents.soma + synapticCurrents.dend1 + synapticCurrents.dend2 + synapticCurrents.dend3
+      const augmented = { ...params, I_stim: params.I_stim + totalSyn }
       const next   = lifStep(state, augmented, dt)
       lifStates.set(neuron.id, next)
       voltages[neuron.id] = next.V
       spikes[neuron.id]   = next.spiked ?? false
       updatedNeurons.push(neuron)
     } else {
-      const params = neuron.params as import('../types').HHParams
+      const params = neuron.params as HHParams
       const prev   = hhStates.get(neuron.id)
+      const prevSomaV = prev?.soma.V ?? DEFAULT_HH_COMPARTMENT.V
       const soma   = prev?.soma  ?? { ...DEFAULT_HH_COMPARTMENT }
       const dends  = prev ? { dend1: prev.dend1, dend2: prev.dend2, dend3: prev.dend3 } : undefined
-      const next   = hhStep(soma, params, I_syn, dt, dends)
+      const I_syn_dend = { dend1: synapticCurrents.dend1, dend2: synapticCurrents.dend2, dend3: synapticCurrents.dend3 }
+      const next   = hhStep(soma, params, synapticCurrents.soma, dt, dends, I_syn_dend)
       hhStates.set(neuron.id, next)
       voltages[neuron.id] = next.soma.V
-      spikes[neuron.id]   = next.soma.V > 0  // threshold for HH spike detection
+      // Upward zero-crossing detection: fires only on rising phase of action potential
+      spikes[neuron.id]   = prevSomaV <= 0 && next.soma.V > 0
       updatedNeurons.push({
         ...neuron,
         compartments: {
