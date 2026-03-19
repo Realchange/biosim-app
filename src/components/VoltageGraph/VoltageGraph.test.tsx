@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { VoltageGraph } from './VoltageGraph'
-import { VoltageTrace } from '../../store/networkStore'
+import type { VoltageTrace } from '../../store/networkStore'
 
 describe('VoltageGraph', () => {
   it('renders placeholder when no traces', () => {

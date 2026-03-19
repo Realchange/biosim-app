@@ -1,4 +1,4 @@
-import { Network } from '../types'
+import type { Network } from '../types'
 import { actionPotentialPreset }   from './action-potential'
 import { excitatorySynapsePreset } from './excitatory-synapse'
 import { inhibitorySynapsePreset } from './inhibitory-synapse'

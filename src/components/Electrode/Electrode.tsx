@@ -16,8 +16,8 @@ export const ELECTRODE_OFFSETS: Record<string, { x: number; y: number }> = {
 export function ElectrodePin({ x, y, color, onRemove }: Props) {
   return (
     <g transform={`translate(${x},${y})`}
-       onClick={onRemove} style={{ cursor: 'pointer' }}
-       title="Elektrode entfernen">
+       onClick={onRemove} style={{ cursor: 'pointer' }}>
+      <title>Elektrode entfernen</title>
       <rect x="-3" y="-18" width={6} height={14} rx={2} fill={color} opacity={0.9} />
       <polygon points="0,-4 -2,2 2,2" fill={color} />
       <line x1="0" y1="-18" x2="0" y2="-26" stroke={color} strokeWidth={1.5} />

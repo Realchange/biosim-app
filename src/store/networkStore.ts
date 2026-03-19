@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import {
+import type {
   Neuron, Synapse, Network, AppMode, Electrode, Compartment, SimulationParams,
+} from '../types'
+import {
   DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_SYNAPSE,
 } from '../types'
 

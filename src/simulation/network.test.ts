@@ -35,7 +35,7 @@ describe('networkStep', () => {
   })
 
   it('records a spike in spikes map when LIF neuron fires', () => {
-    const neurons = [{ ...makeLIF('n1'), params: { ...DEFAULT_LIF_PARAMS, I_stim: 100 } }]
+    const neurons: Neuron[] = [{ ...makeLIF('n1'), params: { ...DEFAULT_LIF_PARAMS, I_stim: 100 } }]
     let result = { neurons, voltages: {} as Record<string, number>, spikes: {} as Record<string, boolean> }
     let spiked = false
     for (let i = 0; i < 500; i++) {
@@ -139,7 +139,6 @@ describe('networkStep', () => {
     }
     let neurons = [hhNeuron]
     let spiked = false
-    let consecutiveTrueCount = 0
     let maxConsecutiveTrue = 0
     let currentConsecutive = 0
 

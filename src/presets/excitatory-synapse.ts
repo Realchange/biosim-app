@@ -1,4 +1,4 @@
-import { Network } from '../types'
+import type { Network } from '../types'
 
 export const excitatorySynapsePreset: Network = {
   version: 1, name: 'Exzitatorische Synapse',

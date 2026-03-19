@@ -2,7 +2,7 @@ import { useNetworkStore } from '../../store/networkStore'
 import { LIFParamsPanel } from './LIFParams'
 import { HHParamsPanel } from './HHParams'
 import { SynapseParamsPanel } from './SynapseParams'
-import { LIFParams, HHParams } from '../../types'
+import type { LIFParams, HHParams } from '../../types'
 import { PRESETS } from '../../presets'
 import styles from './ParameterPanel.module.css'
 

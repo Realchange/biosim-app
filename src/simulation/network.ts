@@ -1,7 +1,9 @@
 // src/simulation/network.ts
-import { Neuron, Synapse, LIFParams, HHParams } from '../types'
-import { lifStep, DEFAULT_LIF_STATE, LIFState } from './lif'
-import { hhStep, DEFAULT_HH_COMPARTMENT, HHAllCompartments } from './hodgkin-huxley'
+import type { Neuron, Synapse, LIFParams, HHParams } from '../types'
+import { lifStep, DEFAULT_LIF_STATE } from './lif'
+import type { LIFState } from './lif'
+import { hhStep, DEFAULT_HH_COMPARTMENT } from './hodgkin-huxley'
+import type { HHAllCompartments } from './hodgkin-huxley'
 
 export interface NetworkStepResult {
   neurons: Neuron[]

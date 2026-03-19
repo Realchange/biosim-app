@@ -1,4 +1,4 @@
-import { Network } from '../types'
+import type { Network } from '../types'
 import { DEFAULT_HH_PARAMS } from '../types'
 
 export const swimRhythmPreset: Network = {

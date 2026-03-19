@@ -1,4 +1,4 @@
-import { Network } from '../types'
+import type { Network } from '../types'
 
 export function serializeNetwork(network: Network): string {
   const clean: Network = {
@@ -12,7 +12,7 @@ export function deserializeNetwork(json: string): Network {
   let data: unknown
   try { data = JSON.parse(json) } catch { throw new Error('Ungültiges JSON') }
   const net = data as Network
-  if (net.version !== 1) throw new Error(`Unbekannte Version: ${(net as Record<string, unknown>).version}`)
+  if (net.version !== 1) throw new Error(`Unbekannte Version: ${(data as Record<string, unknown>)['version']}`)
   if (!Array.isArray(net.neurons) || !Array.isArray(net.synapses)) {
     throw new Error('Ungültiges Netzwerkformat')
   }

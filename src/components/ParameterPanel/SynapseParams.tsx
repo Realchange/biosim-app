@@ -1,4 +1,4 @@
-import { Synapse } from '../../types'
+import type { Synapse } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 
 export function SynapseParamsPanel({ synapse }: { synapse: Synapse }) {

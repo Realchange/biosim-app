@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { VoltageTrace } from '../../store/networkStore'
-import { COMPARTMENT_COLORS, Compartment } from '../../types'
+import type { VoltageTrace } from '../../store/networkStore'
+import { COMPARTMENT_COLORS } from '../../types'
+import type { Compartment } from '../../types'
 import styles from './VoltageGraph.module.css'
 
 const W = 280, H = 220

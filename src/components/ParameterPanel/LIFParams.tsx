@@ -1,4 +1,4 @@
-import { LIFParams as LIFParamsType } from '../../types'
+import type { LIFParams as LIFParamsType } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 
 interface Props { neuronId: string; params: LIFParamsType; studentMode?: boolean }

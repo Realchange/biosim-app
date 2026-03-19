@@ -1,4 +1,4 @@
-import { LIFParams } from '../types'
+import type { LIFParams } from '../types'
 
 export interface LIFState {
   V: number

@@ -1,4 +1,4 @@
-import { Synapse, Neuron } from '../../types'
+import type { Synapse, Neuron } from '../../types'
 
 interface Props {
   synapse: Synapse

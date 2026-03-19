@@ -1,6 +1,6 @@
 // src/simulation/worker.ts
 import { networkStep, resetSimulationState } from './network'
-import { Neuron, Synapse, SimulationParams } from '../types'
+import type { Neuron, Synapse, SimulationParams } from '../types'
 
 type WorkerInMessage =
   | { type: 'start'; neurons: Neuron[]; synapses: Synapse[]; simulation: SimulationParams }

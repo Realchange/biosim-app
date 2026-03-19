@@ -1,4 +1,4 @@
-import { Network } from '../types'
+import type { Network } from '../types'
 
 export const reflexArcPreset: Network = {
   version: 1, name: 'Reflexbogen',

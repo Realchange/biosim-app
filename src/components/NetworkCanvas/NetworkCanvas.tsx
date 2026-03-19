@@ -3,7 +3,8 @@ import { useNetworkStore } from '../../store/networkStore'
 import { NeuronSVG } from '../NeuronSVG/NeuronSVG'
 import { ElectrodePin, ELECTRODE_OFFSETS } from '../Electrode/Electrode'
 import { SynapseArrow } from './SynapseArrow'
-import { COMPARTMENT_COLORS, Compartment } from '../../types'
+import { COMPARTMENT_COLORS } from '../../types'
+import type { Compartment } from '../../types'
 import styles from './NetworkCanvas.module.css'
 
 export function NetworkCanvas() {

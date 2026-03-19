@@ -1,5 +1,5 @@
 // src/simulation/hodgkin-huxley.ts
-import { HHParams, CompartmentState } from '../types'
+import type { HHParams, CompartmentState } from '../types'
 
 export interface HHCompartmentState extends CompartmentState {
   V: number; m: number; h: number; n: number; q: number

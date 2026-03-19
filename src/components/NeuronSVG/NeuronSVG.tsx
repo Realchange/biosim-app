@@ -1,4 +1,5 @@
-import { Neuron, Compartment, voltageToColor } from '../../types'
+import type { Neuron, Compartment } from '../../types'
+import { voltageToColor } from '../../types'
 import styles from './NeuronSVG.module.css'
 
 interface Props {

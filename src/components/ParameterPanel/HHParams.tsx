@@ -1,4 +1,4 @@
-import { HHParams as HHParamsType } from '../../types'
+import type { HHParams as HHParamsType } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 
 interface Props { neuronId: string; params: HHParamsType; studentMode?: boolean }
