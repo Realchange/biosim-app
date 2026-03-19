@@ -6,7 +6,6 @@ import styles from './VoltageGraph.module.css'
 
 const W = 280, H = 220
 const MARGIN = { top: 10, right: 10, bottom: 32, left: 36 }
-const V_MIN = -90, V_MAX = 60
 const WINDOW_MS = 100
 
 interface Props {
@@ -16,13 +15,29 @@ interface Props {
   onExpand?: () => void
 }
 
-function vToY(v: number): number {
-  return MARGIN.top + (H - MARGIN.top - MARGIN.bottom) * (1 - (v - V_MIN) / (V_MAX - V_MIN))
+function autoScale(traces: VoltageTrace[]): [number, number] {
+  const allV = traces.flatMap(tr => tr.points.map(([, v]) => v))
+  if (!allV.length) return [-90, 60]
+  const lo = Math.min(...allV)
+  const hi = Math.max(...allV)
+  const pad = Math.max((hi - lo) * 0.10, 5)
+  return [lo - pad, hi + pad]
 }
 
 export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props) {
   const innerW = W - MARGIN.left - MARGIN.right
   const innerH = H - MARGIN.top - MARGIN.bottom
+
+  // During live run: fixed physiological range to avoid axis jitter.
+  // After run: auto-scale to actual data range.
+  const [vMin, vMax] = useMemo(
+    () => running ? [-90, 60] : autoScale(traces),
+    [running, traces],
+  )
+
+  function vToY(v: number): number {
+    return MARGIN.top + innerH * (1 - (v - vMin) / Math.max(vMax - vMin, 1))
+  }
 
   const tMax = running ? currentT : Math.max(WINDOW_MS, ...traces.flatMap(tr => tr.points.map(([t]) => t)), 0)
   const tMin = running ? Math.max(0, tMax - WINDOW_MS) : 0
@@ -56,14 +71,15 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
         <rect x={MARGIN.left} y={MARGIN.top} width={innerW} height={innerH}
           fill="#0d1117" rx={3} />
 
-        {[-70, -40, 0, 40].map(v => {
+        {[0, 0.25, 0.5, 0.75, 1].map(frac => {
+          const v = Math.round(vMin + (vMax - vMin) * frac)
           const y = vToY(v)
           return (
-            <g key={v}>
+            <g key={frac}>
               <line x1={MARGIN.left} y1={y} x2={MARGIN.left + innerW} y2={y}
                 stroke="#21262d" strokeWidth={0.5} />
               <text x={MARGIN.left - 4} y={y + 4}
-                fill="#8b949e" fontSize={9} textAnchor="end">{v}mV</text>
+                fill="#8b949e" fontSize={9} textAnchor="end">{v}</text>
             </g>
           )
         })}

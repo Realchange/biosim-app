@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useNetworkStore } from '../../store/networkStore'
 import { COMPARTMENT_COLORS } from '../../types'
 import type { Compartment, LIFParams, HHParams } from '../../types'
+import type { VoltageTrace } from '../../store/networkStore'
 import styles from './GraphModal.module.css'
 
 interface Props {
@@ -15,9 +16,17 @@ const MI   = { top: 12, right: 16, bottom: 36, left: 42 }
 const VH = 240   // voltage panel inner height (px, scales with SVG viewBox)
 const IH = 140   // current panel inner height
 
-function vToY(v: number, h: number): number {
-  const V_MIN = -90, V_MAX = 60
-  return MV.top + h * (1 - (v - V_MIN) / (V_MAX - V_MIN))
+function computeAutoScale(traces: VoltageTrace[]): [number, number] {
+  const allV = traces.flatMap(tr => tr.points.map(([, v]) => v))
+  if (!allV.length) return [-90, 60]
+  const lo = Math.min(...allV)
+  const hi = Math.max(...allV)
+  const pad = Math.max((hi - lo) * 0.10, 5)
+  return [Math.round(lo - pad), Math.round(hi + pad)]
+}
+
+function vToY(v: number, vMin: number, vMax: number, h: number): number {
+  return MV.top + h * (1 - (v - vMin) / Math.max(vMax - vMin, 1))
 }
 
 function iToY(I: number, iMin: number, iMax: number, h: number): number {
@@ -29,14 +38,41 @@ export function GraphModal({ open, onClose }: Props) {
   const { traces, currentTraces, neurons, simulationParams } = useNetworkStore()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [zoom, setZoom] = useState<[number, number] | null>(null)
+  const [vAxisOverride, setVAxisOverride] = useState<[number, number] | null>(null)
+
+  const autoScale = useMemo(() => computeAutoScale(traces), [traces])
+  const [vMin, vMax] = vAxisOverride ?? autoScale
+
+  // Inputs: local string state so user can type freely
+  const [vMinStr, setVMinStr] = useState('')
+  const [vMaxStr, setVMaxStr] = useState('')
 
   // Open / close the native dialog
   useEffect(() => {
     const d = dialogRef.current
     if (!d) return
-    if (open && !d.open) { d.showModal(); setZoom(null) }
+    if (open && !d.open) {
+      d.showModal()
+      setZoom(null)
+      setVAxisOverride(null)
+      const [lo, hi] = computeAutoScale(traces)
+      setVMinStr(String(lo))
+      setVMaxStr(String(hi))
+    }
     if (!open && d.open) d.close()
-  }, [open])
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAutoScale = () => {
+    setVAxisOverride(null)
+    setVMinStr(String(autoScale[0]))
+    setVMaxStr(String(autoScale[1]))
+  }
+
+  const applyVAxis = () => {
+    const lo = parseFloat(vMinStr)
+    const hi = parseFloat(vMaxStr)
+    if (!isNaN(lo) && !isNaN(hi) && hi > lo) setVAxisOverride([lo, hi])
+  }
 
   // Close on Escape (native dialog already does this, but keep state in sync)
   useEffect(() => {
@@ -115,20 +151,43 @@ export function GraphModal({ open, onClose }: Props) {
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
       </div>
 
+      {/* ── Y-axis controls ── */}
+      <div className={styles.axisControls}>
+        <label className={styles.axisLabel}>Y-Achse:</label>
+        <input className={styles.axisInput} type="number" value={vMinStr}
+          onChange={e => setVMinStr(e.target.value)}
+          onBlur={applyVAxis} onKeyDown={e => e.key === 'Enter' && applyVAxis()}
+          title="Y min (mV)" />
+        <span className={styles.axisSep}>–</span>
+        <input className={styles.axisInput} type="number" value={vMaxStr}
+          onChange={e => setVMaxStr(e.target.value)}
+          onBlur={applyVAxis} onKeyDown={e => e.key === 'Enter' && applyVAxis()}
+          title="Y max (mV)" />
+        <span className={styles.axisUnit}>mV</span>
+        <button className={styles.autoBtn} onClick={handleAutoScale}>Auto</button>
+      </div>
+
       {/* ── Voltage panel ── */}
       <div className={styles.panelLabel}>Spannung (mV)</div>
       <svg
         className={styles.svg}
         viewBox={`0 0 ${SVG_W} ${VH + MV.top + MV.bottom}`}
         preserveAspectRatio="xMidYMid meet"
+        style={{ overflow: 'visible' }}
       >
+        <defs>
+          <clipPath id="vClip">
+            <rect x={MV.left} y={MV.top} width={vInnerW} height={VH} />
+          </clipPath>
+        </defs>
         <rect x={MV.left} y={MV.top} width={vInnerW} height={VH} fill="#0d1117" rx={3} />
 
         {/* Y grid + labels */}
-        {[-70, -40, 0, 40].map(v => {
-          const y = vToY(v, VH)
+        {[0, 0.25, 0.5, 0.75, 1].map(frac => {
+          const v = Math.round(vMin + (vMax - vMin) * frac)
+          const y = vToY(v, vMin, vMax, VH)
           return (
-            <g key={v}>
+            <g key={frac}>
               <line x1={MV.left} y1={y} x2={MV.left + vInnerW} y2={y} stroke="#21262d" strokeWidth={0.5} />
               <text x={MV.left - 4} y={y + 4} fill="#8b949e" fontSize={9} textAnchor="end">{v}</text>
             </g>
@@ -139,20 +198,22 @@ export function GraphModal({ open, onClose }: Props) {
         {xTicks(tToVX, VH, MV)}
         <text x={MV.left + vInnerW / 2} y={MV.top + VH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
 
-        {/* Traces */}
-        {traces.map(tr => {
-          const pts = tr.points
-            .filter(([t]) => t >= dispStart && t <= dispEnd)
-            .map(([t, v]) => `${tToVX(t).toFixed(1)},${vToY(v, VH).toFixed(1)}`)
-            .join(' ')
-          if (!pts) return null
-          return (
-            <polyline key={`${tr.neuronId}-${tr.compartment}`}
-              points={pts} fill="none"
-              stroke={COMPARTMENT_COLORS[tr.compartment as Compartment]}
-              strokeWidth={1.5} />
-          )
-        })}
+        {/* Traces — clipped to plot area */}
+        <g clipPath="url(#vClip)">
+          {traces.map(tr => {
+            const pts = tr.points
+              .filter(([t]) => t >= dispStart && t <= dispEnd)
+              .map(([t, v]) => `${tToVX(t).toFixed(1)},${vToY(v, vMin, vMax, VH).toFixed(1)}`)
+              .join(' ')
+            if (!pts) return null
+            return (
+              <polyline key={`${tr.neuronId}-${tr.compartment}`}
+                points={pts} fill="none"
+                stroke={COMPARTMENT_COLORS[tr.compartment as Compartment]}
+                strokeWidth={1.5} />
+            )
+          })}
+        </g>
       </svg>
 
       {/* ── Current panel ── */}
