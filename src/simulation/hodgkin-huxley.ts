@@ -26,6 +26,16 @@ function betaH(V: number)  { return 1 / (1 + Math.exp(-(V + 35) / 10)) }
 function alphaQ(V: number) { return 0.055 * (V + 27) / (1 - Math.exp(-(V + 27) / 3.8) || 1e-7) }
 function betaQ(V: number)  { return 0.94 * Math.exp(-(V + 75) / 17) }
 
+// Passive dendrites rest near the somatic resting potential. The HH leak
+// reversal (E_leak ≈ -54 mV) is NOT the resting potential, so a purely passive
+// compartment uses this dedicated reversal to sit at a realistic ~-65 mV.
+const DEND_E_LEAK = -65
+// Passive dendrites have a higher membrane resistance (lower leak) than the soma,
+// so injected current is preserved as it spreads toward the spike-generating soma
+// instead of bleeding away locally. Lowering this reduces dendritic input damping.
+const DEND_LEAK_SCALE = 0.35
+
+// Active compartment: full Hodgkin-Huxley Na⁺/K⁺/Ca²⁺ + leak (soma / spike zone).
 function stepCompartment(
   c: HHCompartmentState,
   p: HHParams,
@@ -51,6 +61,19 @@ function stepCompartment(
   }
 }
 
+// Passive compartment: leak only (dendrites). No voltage-gated channels, so it
+// cannot generate its own action potential — it just integrates and decays.
+function stepPassiveCompartment(
+  c: HHCompartmentState,
+  p: HHParams,
+  I_ext: number,
+  dt: number
+): HHCompartmentState {
+  const I_leak = p.g_leak * DEND_LEAK_SCALE * (c.V - DEND_E_LEAK)
+  const dV = (I_ext - I_leak) / p.C_m
+  return { ...c, V: c.V + dV * dt }
+}
+
 export function hhStep(
   soma: HHCompartmentState,
   params: HHParams,
@@ -67,9 +90,10 @@ export function hhStep(
   const I_d1_to_d2   = gc * (d.dend1.V - d.dend2.V)
   const I_d2_to_d3   = gc * (d.dend2.V - d.dend3.V)
   return {
-    soma:  stepCompartment(soma,    params, params.I_stim + I_synaptic - I_soma_to_d1, dt),
-    dend1: stepCompartment(d.dend1, params, I_soma_to_d1 - I_d1_to_d2 + sd.dend1,    dt),
-    dend2: stepCompartment(d.dend2, params, I_d1_to_d2   - I_d2_to_d3 + sd.dend2,    dt),
-    dend3: stepCompartment(d.dend3, params, I_d2_to_d3                + sd.dend3,     dt),
+    // Soma is the active, spike-generating zone; the three dendrites are passive.
+    soma:  stepCompartment(soma,           params, params.I_stim + I_synaptic - I_soma_to_d1, dt),
+    dend1: stepPassiveCompartment(d.dend1, params, I_soma_to_d1 - I_d1_to_d2 + sd.dend1,    dt),
+    dend2: stepPassiveCompartment(d.dend2, params, I_d1_to_d2   - I_d2_to_d3 + sd.dend2,    dt),
+    dend3: stepPassiveCompartment(d.dend3, params, I_d2_to_d3                + sd.dend3,     dt),
   }
 }

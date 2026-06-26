@@ -1,0 +1,23 @@
+.overlay {
+  position: fixed; inset: 0; background: rgba(1, 4, 9, 0.7);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal {
+  width: min(520px, 92vw); max-height: 86vh; overflow-y: auto;
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  padding: 16px 18px; color: #c9d1d9;
+}
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.title { font-size: 15px; font-weight: 600; color: #f0f6fc; }
+.close { background: none; border: none; color: #8b949e; font-size: 16px; cursor: pointer; line-height: 1; }
+.close:hover { color: #c9d1d9; }
+.summary { font-size: 12.5px; line-height: 1.55; color: #c9d1d9; margin: 0 0 14px; }
+.tipsTitle { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #8b949e; margin-bottom: 6px; }
+.tips { margin: 0 0 16px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.tips li { font-size: 12px; line-height: 1.45; }
+.tips strong { color: #58a6ff; }
+.download {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+}
+.download:hover { background: #30363d; }

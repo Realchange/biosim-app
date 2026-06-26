@@ -4,8 +4,12 @@ import type {
   Neuron, Synapse, Network, AppMode, Electrode, Compartment, SimulationParams,
 } from '../types'
 import {
-  DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_SYNAPSE,
+  DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_SYNAPSE,
 } from '../types'
+
+export type NeuronModel = 'lif' | 'hodgkin-huxley' | 'graded'
+export type EditorTool = 'select' | 'synapse' | 'spiking' | 'nonspiking' | 'afferent'
+export type EditorModel = 'hodgkin-huxley' | 'lif'
 
 // Voltage trace: per-electrode, array of [t, V] pairs
 export type VoltageTrace = { neuronId: string; compartment: Compartment; points: [number, number][] }
@@ -16,6 +20,8 @@ interface SimState {
   running: boolean
   paused: boolean
   t: number   // current simulation time ms
+  loop: boolean   // restart automatically when the run finishes
+  speed: number   // ms of real delay between snapshots (higher = slower playback)
 }
 
 interface NetworkState {
@@ -28,9 +34,12 @@ interface NetworkState {
   traces: VoltageTrace[]
   currentTraces: CurrentTrace[]
   sim: SimState
+  activity: Record<string, number>   // per-neuron smoothed firing activity (0..1) for the glow
+  editorTool: EditorTool             // active editor placement tool
+  editorModel: EditorModel           // model for newly placed spiking/afferent neurons
 
   // Actions
-  addNeuron: (pos: { x: number; y: number }, model: 'lif' | 'hodgkin-huxley') => void
+  addNeuron: (pos: { x: number; y: number }, model: NeuronModel, kind?: 'afferent') => void
   removeNeuron: (id: string) => void
   updateNeuron: (id: string, patch: Partial<Neuron>) => void
   moveNeuron: (id: string, pos: { x: number; y: number }) => void
@@ -45,16 +54,23 @@ interface NetworkState {
   appendCurrentPoints: (neuronId: string, t: number, I: number) => void
   clearTraces: () => void
   setSim: (patch: Partial<SimState>) => void
+  setActivity: (activity: Record<string, number>) => void
+  setSimulationParams: (patch: Partial<SimulationParams>) => void
+  setEditorTool: (tool: EditorTool) => void
+  setEditorModel: (model: EditorModel) => void
+  clearNetwork: () => void
   loadNetwork: (network: Network) => void
   getInitialState: () => NetworkState
 }
 
-const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'sim'> = {
+const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'sim' | 'activity' | 'editorTool' | 'editorModel'> = {
   neurons: [], synapses: [],
   simulationParams: { length: 100, step: 0.1 },
   mode: 'presentation',
   selectedId: null, electrodes: [], traces: [], currentTraces: [],
-  sim: { running: false, paused: false, t: 0 },
+  sim: { running: false, paused: false, t: 0, loop: false, speed: 16 },
+  activity: {},
+  editorTool: 'select', editorModel: 'hodgkin-huxley',
 }
 
 export const useNetworkStore = create<NetworkState>()((set, get) => ({
@@ -62,14 +78,22 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
 
   getInitialState: () => ({ ...get(), ...INITIAL }),
 
-  addNeuron: (pos, model) => set(s => ({
-    neurons: [...s.neurons, {
-      id: uuidv4(),
-      position: pos,
-      model,
-      params: model === 'lif' ? { ...DEFAULT_LIF_PARAMS } : { ...DEFAULT_HH_PARAMS },
-    }],
-  })),
+  addNeuron: (pos, model, kind) => set(s => {
+    const base = model === 'graded'
+      ? { ...DEFAULT_GRADED_PARAMS }
+      : model === 'lif' ? { ...DEFAULT_LIF_PARAMS } : { ...DEFAULT_HH_PARAMS }
+    // Placed neurons receive NO external current by default — the user decides which
+    // neurons get a stimulus by raising their I_stim in the parameter panel.
+    return {
+      neurons: [...s.neurons, {
+        id: uuidv4(),
+        position: pos,
+        model,
+        ...(kind ? { kind } : {}),
+        params: { ...base, I_stim: 0 },
+      }],
+    }
+  }),
 
   removeNeuron: (id) => set(s => ({
     neurons: s.neurons.filter(n => n.id !== id),
@@ -103,7 +127,16 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
   })),
 
   setSelected: (id) => set({ selectedId: id }),
-  setMode: (mode) => set({ mode }),
+  // Leaving the editor resets the placement tool to 'select'.
+  setMode: (mode) => set(s => ({ mode, editorTool: mode === 'editor' ? s.editorTool : 'select' })),
+
+  setEditorTool: (tool) => set({ editorTool: tool }),
+  setEditorModel: (model) => set({ editorModel: model }),
+
+  clearNetwork: () => set({
+    neurons: [], synapses: [], electrodes: [], traces: [], currentTraces: [],
+    selectedId: null, activity: {},
+  }),
 
   addElectrode: (neuronId, compartment) => set(s => {
     const exists = s.electrodes.some(e => e.neuronId === neuronId && e.compartment === compartment)
@@ -148,6 +181,10 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
   })),
 
   setSim: (patch) => set(s => ({ sim: { ...s.sim, ...patch } })),
+
+  setActivity: (activity) => set({ activity }),
+
+  setSimulationParams: (patch) => set(s => ({ simulationParams: { ...s.simulationParams, ...patch } })),
 
   loadNetwork: (network) => set({
     neurons: network.neurons,

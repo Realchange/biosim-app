@@ -3,10 +3,11 @@ import { networkStep, resetSimulationState } from './network'
 import type { Neuron, Synapse, SimulationParams } from '../types'
 
 type WorkerInMessage =
-  | { type: 'start'; neurons: Neuron[]; synapses: Synapse[]; simulation: SimulationParams }
+  | { type: 'start'; neurons: Neuron[]; synapses: Synapse[]; simulation: SimulationParams; speed?: number }
   | { type: 'pause' }
   | { type: 'resume' }
   | { type: 'stop' }
+  | { type: 'speed'; delay: number }
 
 export type WorkerOutMessage =
   | {
@@ -27,21 +28,26 @@ export type WorkerOutMessage =
 
 let paused = false
 let stopped = false
+let snapshotDelay = 0   // ms of real-time delay between snapshots (playback speed)
 
 self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
   const msg = e.data
   if (msg.type === 'pause')  { paused = true;  return }
   if (msg.type === 'resume') { paused = false; return }
   if (msg.type === 'stop')   { stopped = true; return }
+  if (msg.type === 'speed')  { snapshotDelay = msg.delay; return }
 
   if (msg.type === 'start') {
     paused = false
     stopped = false
+    snapshotDelay = msg.speed ?? 0
     resetSimulationState()
 
     const { neurons: initNeurons, synapses, simulation } = msg
     const { length, step } = simulation
-    const stepsPerSnapshot = Math.max(1, Math.round(10 / step))  // snapshot every ~10 ms
+    // Snapshot every ~2 ms of sim time so the live trace draws smoothly even for
+    // short, fast events like a single action potential (independent of step size).
+    const stepsPerSnapshot = Math.max(1, Math.round(2 / step))
 
     let neurons = initNeurons
     let t = 0
@@ -100,7 +106,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
         self.postMessage({ type: 'done' } satisfies WorkerOutMessage)
         return
       }
-      setTimeout(tick, 0)  // yield to allow pause/stop messages
+      setTimeout(tick, snapshotDelay)  // delay controls playback speed (yields too)
     }
 
     tick()

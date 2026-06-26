@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 import { NeuronSVG } from './NeuronSVG'
 import { DEFAULT_LIF_PARAMS } from '../../types'
 
@@ -9,38 +9,50 @@ const neuron = {
 }
 
 describe('NeuronSVG', () => {
-  it('renders soma ellipse', () => {
-    const { container } = render(
-      <svg><NeuronSVG neuron={neuron} /></svg>
-    )
-    expect(container.querySelector('ellipse')).toBeTruthy()
+  it('renders the soma as a circle', () => {
+    const { container } = render(<svg><NeuronSVG neuron={neuron} /></svg>)
+    const soma = container.querySelector('circle[data-compartment="soma"]')
+    expect(soma).toBeTruthy()
   })
 
-  it('renders axon line', () => {
-    const { container } = render(
-      <svg><NeuronSVG neuron={neuron} /></svg>
-    )
-    const lines = container.querySelectorAll('line')
-    expect(lines.length).toBeGreaterThan(0)
+  it('renders three dendrite segments', () => {
+    const { container } = render(<svg><NeuronSVG neuron={neuron} /></svg>)
+    for (const c of ['dend1', 'dend2', 'dend3']) {
+      expect(container.querySelector(`[data-compartment="${c}"]`)).toBeTruthy()
+    }
   })
 
-  it('applies voltageColor to soma when provided', () => {
-    const { container } = render(
-      <svg><NeuronSVG neuron={neuron} somaColor="#da3633" /></svg>
-    )
-    const soma = container.querySelector('ellipse')
+  it('applies somaColor to the soma fill', () => {
+    const { container } = render(<svg><NeuronSVG neuron={neuron} somaColor="#da3633" /></svg>)
+    const soma = container.querySelector('circle[data-compartment="soma"]')
     expect(soma?.getAttribute('fill')).toBe('#da3633')
   })
 
   it('highlights a compartment when highlightCompartment is set', () => {
-    const { container } = render(
-      <svg><NeuronSVG neuron={neuron} highlightCompartment="dend1" /></svg>
-    )
-    const circles = container.querySelectorAll('circle')
-    const highlighted = Array.from(circles).some(c =>
-      c.getAttribute('data-compartment') === 'dend1' &&
-      c.getAttribute('stroke-width') !== '1.5'
-    )
-    expect(highlighted).toBe(true)
+    const { container } = render(<svg><NeuronSVG neuron={neuron} highlightCompartment="dend1" /></svg>)
+    // A dedicated highlight outline appears for the highlighted compartment
+    expect(container.querySelector('[data-highlight="dend1"]')).toBeTruthy()
+  })
+
+  it('renders a dashed soma outline for a graded neuron', () => {
+    const g = { ...neuron, model: 'graded' as const }
+    const { container } = render(<svg><NeuronSVG neuron={g} /></svg>)
+    const soma = container.querySelector('circle[data-compartment="soma"]')
+    expect(soma?.getAttribute('stroke-dasharray')).toBeTruthy()
+  })
+
+  it('renders an afferent marker for an afferent neuron', () => {
+    const a = { ...neuron, kind: 'afferent' as const }
+    const { container } = render(<svg><NeuronSVG neuron={a} /></svg>)
+    expect(container.querySelector('[data-afferent]')).toBeTruthy()
+  })
+
+  it('calls onClick with the clicked compartment', () => {
+    const onClick = vi.fn()
+    const { container } = render(<svg><NeuronSVG neuron={neuron} onClick={onClick} /></svg>)
+    const dend2 = container.querySelector('[data-compartment="dend2"]')!
+    fireEvent.click(dend2)
+    expect(onClick).toHaveBeenCalled()
+    expect(onClick.mock.calls[0][0]).toBe('dend2')
   })
 })

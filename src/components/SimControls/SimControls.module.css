@@ -2,4 +2,10 @@
 .primary { background: #238636; color: white; }
 .controls button { border: 1px solid #30363d; background: #21262d; color: #c9d1d9; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+.loopOn { background: #1f6feb !important; color: white !important; border-color: #1f6feb !important; }
+.tempo { display: flex; gap: 6px; align-items: center; color: #8b949e; font-size: 12px; }
+.tempo input { width: 90px; }
+.duration { display: flex; gap: 6px; align-items: center; color: #8b949e; font-size: 12px; }
+.duration input { width: 64px; border: 1px solid #30363d; background: #0d1117; color: #c9d1d9; padding: 4px 6px; border-radius: 4px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.duration input:disabled { opacity: 0.4; cursor: not-allowed; }
 .time { color: #8b949e; font-size: 12px; margin-left: auto; font-variant-numeric: tabular-nums; }

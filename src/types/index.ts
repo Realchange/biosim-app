@@ -10,6 +10,10 @@ export interface LIFParams {
   tau_m: number         // ms, default 10
   R_m: number           // MΩ, default 10
   I_stim: number        // nA, default 0.5
+  // Stimulus pulse window. Absent/0 stimDuration = sustained current (always on from stimOnset).
+  stimOnset?: number    // ms, stimulus starts; default 0
+  stimDuration?: number // ms, how long the stimulus stays on; 0 = sustained
+  adapt?: number        // spike-triggered adaptation/fatigue (nA per spike); 0 = off (default)
 }
 
 export interface HHParams {
@@ -24,6 +28,12 @@ export interface HHParams {
   g_leak: number        // mS/cm², default 0.3
   C_m: number           // µF/cm², default 1.0
   g_core: number        // axial conductance between soma and dendrites, default 0.1
+  // Stimulus pulse window. Absent/0 stimDuration = sustained current (always on from stimOnset).
+  stimOnset?: number    // ms, stimulus starts; default 0
+  stimDuration?: number // ms, how long the stimulus stays on; 0 = sustained
+  // Where the stimulus current is injected; default 'soma'. Injecting into a
+  // dendrite low-pass filters the input through the cable → smoother soma response.
+  stimCompartment?: Compartment
 }
 
 export interface CompartmentState {
@@ -37,7 +47,9 @@ export interface CompartmentState {
 export interface Neuron {
   id: string
   position: { x: number; y: number }
-  model: 'lif' | 'hodgkin-huxley'
+  label?: string        // optional role name shown instead of "Neuron N"
+  kind?: 'afferent'     // editor marker: sensory input neuron (spiking, visual only)
+  model: 'lif' | 'hodgkin-huxley' | 'graded'
   params: LIFParams | HHParams
   // HH only: per-compartment simulation state (soma + 3 dendrite levels)
   // LIF: compartments field is absent; all synaptic input collapses to soma
@@ -96,16 +108,25 @@ export function voltageToColor(v: number): string {
 
 export const DEFAULT_LIF_PARAMS: LIFParams = {
   E_rest: -70, V_threshold: -55, tau_m: 10, R_m: 10, I_stim: 0.5,
+  stimOnset: 0, stimDuration: 0,
+}
+
+// Non-spiking (graded) neuron: a leaky integrator. V_threshold is unused (it never
+// spikes) but kept so the type matches LIFParams (the dendrite cable expects it).
+export const DEFAULT_GRADED_PARAMS: LIFParams = {
+  E_rest: -70, V_threshold: -55, tau_m: 12, R_m: 10, I_stim: 0,
+  stimOnset: 0, stimDuration: 0,
 }
 
 export const DEFAULT_HH_PARAMS: HHParams = {
   I_stim: 10, E_Na: 50, E_K: -77, E_Ca: 120, E_leak: -54.387,
-  g_Na: 120, g_K: 36, g_Ca: 0.3, g_leak: 0.3, C_m: 1.0, g_core: 0.1,
+  g_Na: 120, g_K: 36, g_Ca: 0.3, g_leak: 0.3, C_m: 1.0, g_core: 0.3,
+  stimOnset: 0, stimDuration: 0, stimCompartment: 'soma',
 }
 
 export const DEFAULT_SYNAPSE: Omit<Synapse, 'id' | 'sourceId' | 'targetId'> = {
-  targetCompartment: 'soma',
+  targetCompartment: 'dend1',
   type: 'excitatory',
-  conductance: 1,
+  conductance: 6,
   deliveryTime: 1,
 }

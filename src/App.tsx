@@ -6,11 +6,12 @@ import { VoltageGraph }    from './components/VoltageGraph/VoltageGraph'
 import { SimControls }     from './components/SimControls/SimControls'
 import { GraphModal }      from './components/GraphModal/GraphModal'
 import { downloadNetwork, uploadNetwork } from './utils/fileIO'
+import { APP_VERSION } from './version'
 import styles from './App.module.css'
 
 export default function App() {
   const { neurons, synapses, simulationParams, traces, sim, loadNetwork } = useNetworkStore()
-  const [modalOpen, setModalOpen] = useState(false)
+  const [expandedNeuron, setExpandedNeuron] = useState<string | null>(null)
 
   const handleSave = () => {
     downloadNetwork({ version: 1, name: 'simulation', neurons, synapses, simulation: simulationParams })
@@ -31,6 +32,7 @@ export default function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <span className={styles.logo}>BioSim</span>
+        <span className={styles.version}>v{APP_VERSION}</span>
         <button className={styles.headerBtn} onClick={handleLoad}>📂 Öffnen</button>
         <button className={styles.headerBtn} onClick={handleSave}>💾 Speichern</button>
       </header>
@@ -41,9 +43,9 @@ export default function App() {
           <NetworkCanvas />
           <SimControls />
         </div>
-        <VoltageGraph traces={traces} running={sim.running} currentT={sim.t} onExpand={() => setModalOpen(true)} />
+        <VoltageGraph traces={traces} running={sim.running} currentT={sim.t} onExpand={setExpandedNeuron} />
       </div>
-      <GraphModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <GraphModal neuronId={expandedNeuron} onClose={() => setExpandedNeuron(null)} />
     </div>
   )
 }

@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNetworkStore } from '../../store/networkStore'
 import { COMPARTMENT_COLORS } from '../../types'
 import type { Compartment, LIFParams, HHParams } from '../../types'
 import type { VoltageTrace } from '../../store/networkStore'
+import { stimulusPoints } from '../../utils/stimulus'
+import { autoScaleVoltage, FIXED_V_RANGE } from '../../utils/scale'
 import styles from './GraphModal.module.css'
 
 interface Props {
-  open: boolean
+  // The neuron whose detail view is open, or null when closed.
+  neuronId: string | null
   onClose: () => void
 }
 
@@ -17,12 +20,8 @@ const VH = 240   // voltage panel inner height (px, scales with SVG viewBox)
 const IH = 140   // current panel inner height
 
 function computeAutoScale(traces: VoltageTrace[]): [number, number] {
-  const allV = traces.flatMap(tr => tr.points.map(([, v]) => v))
-  if (!allV.length) return [-90, 60]
-  const lo = Math.min(...allV)
-  const hi = Math.max(...allV)
-  const pad = Math.max((hi - lo) * 0.10, 5)
-  return [Math.round(lo - pad), Math.round(hi + pad)]
+  const [lo, hi] = autoScaleVoltage(traces.flatMap(tr => tr.points.map(([, v]) => v)))
+  return [Math.round(lo), Math.round(hi)]
 }
 
 function vToY(v: number, vMin: number, vMax: number, h: number): number {
@@ -34,14 +33,25 @@ function iToY(I: number, iMin: number, iMax: number, h: number): number {
   return MI.top + h * (1 - (I - iMin) / span)
 }
 
-export function GraphModal({ open, onClose }: Props) {
-  const { traces, currentTraces, neurons, simulationParams } = useNetworkStore()
+export function GraphModal({ neuronId, onClose }: Props) {
+  const { traces: allTraces, currentTraces: allCurrentTraces, neurons, simulationParams } = useNetworkStore()
+  const open = neuronId != null
+  // Show only the selected neuron's traces — each neuron has its own detail view.
+  const traces = allTraces.filter(t => t.neuronId === neuronId)
+  const currentTraces = allCurrentTraces.filter(t => t.neuronId === neuronId)
+  const neuronLabel = neuronId
+    ? (neurons.find(n => n.id === neuronId)?.label ?? `Neuron ${neurons.findIndex(n => n.id === neuronId) + 1}`)
+    : ''
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const panRef = useRef<{ x: number; start: number; end: number } | null>(null)
   const [zoom, setZoom] = useState<[number, number] | null>(null)
   const [vAxisOverride, setVAxisOverride] = useState<[number, number] | null>(null)
+  const [panning, setPanning] = useState(false)
 
-  const autoScale = useMemo(() => computeAutoScale(traces), [traces])
-  const [vMin, vMax] = vAxisOverride ?? autoScale
+  // Default to the fixed physiological window; the user rescales on demand
+  // (typing values, clicking Auto, or zoom/pan).
+  const [vMin, vMax] = vAxisOverride ?? FIXED_V_RANGE
 
   // Inputs: local string state so user can type freely
   const [vMinStr, setVMinStr] = useState('')
@@ -55,17 +65,18 @@ export function GraphModal({ open, onClose }: Props) {
       d.showModal()
       setZoom(null)
       setVAxisOverride(null)
-      const [lo, hi] = computeAutoScale(traces)
-      setVMinStr(String(lo))
-      setVMaxStr(String(hi))
+      setVMinStr(String(FIXED_V_RANGE[0]))
+      setVMaxStr(String(FIXED_V_RANGE[1]))
     }
     if (!open && d.open) d.close()
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open])
 
+  // "Auto" = fit the Y-axis to the actual data, on demand (a user interaction).
   const handleAutoScale = () => {
-    setVAxisOverride(null)
-    setVMinStr(String(autoScale[0]))
-    setVMaxStr(String(autoScale[1]))
+    const fitted = computeAutoScale(traces)
+    setVAxisOverride(fitted)
+    setVMinStr(String(fitted[0]))
+    setVMaxStr(String(fitted[1]))
   }
 
   const applyVAxis = () => {
@@ -106,6 +117,34 @@ export function GraphModal({ open, onClose }: Props) {
   const vInnerW = SVG_W - MV.left - MV.right
   const iInnerW = SVG_W - MI.left - MI.right
 
+  // Drag-to-pan the time axis (only meaningful once zoomed in).
+  const handlePanStart = useCallback((e: React.MouseEvent) => {
+    panRef.current = { x: e.clientX, start: dispStart, end: dispEnd }
+    setPanning(true)
+  }, [dispStart, dispEnd])
+
+  const handlePanMove = useCallback((e: React.MouseEvent) => {
+    const pan = panRef.current
+    const svg = svgRef.current
+    if (!pan || !svg) return
+    const rect = svg.getBoundingClientRect()
+    const plotPx = rect.width * (vInnerW / SVG_W)   // displayed width of the plot area
+    if (plotPx <= 0) return
+    const span = pan.end - pan.start
+    const dt = ((e.clientX - pan.x) / plotPx) * span
+    let s = pan.start - dt
+    let en = pan.end - dt
+    if (s < 0) { en -= s; s = 0 }
+    if (en > tTotal) { s -= en - tTotal; en = tTotal }
+    s = Math.max(0, s)
+    setZoom([s, en])
+  }, [vInnerW, tTotal])
+
+  const handlePanEnd = useCallback(() => {
+    panRef.current = null
+    setPanning(false)
+  }, [])
+
   function tToVX(t: number) {
     return MV.left + vInnerW * ((t - dispStart) / Math.max(dispEnd - dispStart, 1))
   }
@@ -144,10 +183,11 @@ export function GraphModal({ open, onClose }: Props) {
   if (!open) return null
 
   return (
-    <dialog ref={dialogRef} className={styles.dialog} onWheel={handleWheel}>
+    <dialog ref={dialogRef} className={styles.dialog} onWheel={handleWheel}
+      onMouseMove={handlePanMove} onMouseUp={handlePanEnd} onMouseLeave={handlePanEnd}>
       <div className={styles.header}>
-        <span className={styles.title}>Messspur</span>
-        <span className={styles.hint}>Scroll zum Zoomen</span>
+        <span className={styles.title}>Messspur — {neuronLabel}</span>
+        <span className={styles.hint}>Scroll zum Zoomen · Ziehen zum Verschieben</span>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
       </div>
 
@@ -170,10 +210,12 @@ export function GraphModal({ open, onClose }: Props) {
       {/* ── Voltage panel ── */}
       <div className={styles.panelLabel}>Spannung (mV)</div>
       <svg
+        ref={svgRef}
         className={styles.svg}
         viewBox={`0 0 ${SVG_W} ${VH + MV.top + MV.bottom}`}
         preserveAspectRatio="xMidYMid meet"
-        style={{ overflow: 'visible' }}
+        style={{ overflow: 'visible', cursor: panning ? 'grabbing' : 'grab' }}
+        onMouseDown={handlePanStart}
       >
         <defs>
           <clipPath id="vClip">
@@ -217,11 +259,13 @@ export function GraphModal({ open, onClose }: Props) {
       </svg>
 
       {/* ── Current panel ── */}
-      <div className={styles.panelLabel}>Synaptischer Strom (nA)</div>
+      <div className={styles.panelLabel}>Strom (nA)</div>
       <svg
         className={styles.svg}
         viewBox={`0 0 ${SVG_W} ${IH + MI.top + MI.bottom}`}
         preserveAspectRatio="xMidYMid meet"
+        style={{ cursor: panning ? 'grabbing' : 'grab' }}
+        onMouseDown={handlePanStart}
       >
         <rect x={MI.left} y={MI.top} width={iInnerW} height={IH} fill="#0d1117" rx={3} />
 
@@ -240,18 +284,19 @@ export function GraphModal({ open, onClose }: Props) {
         {xTicks(tToIX, IH, MI)}
         <text x={MI.left + iInnerW / 2} y={MI.top + IH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
 
-        {/* I_stim reference lines (dashed, per neuron) */}
+        {/* Injected stimulus current as a step waveform (dashed, per neuron) */}
         {electrodeNeuronIds.map(nId => {
           const n = neurons.find(nn => nn.id === nId)
           if (!n) return null
-          const iStim = (n.params as LIFParams | HHParams).I_stim
-          const y = iToY(iStim, iMin, iMax, IH)
+          const pts = stimulusPoints(n.params as LIFParams | HHParams, dispStart, dispEnd)
+            .map(([t, I]) => `${tToIX(t).toFixed(1)},${iToY(I, iMin, iMax, IH).toFixed(1)}`)
+            .join(' ')
           const firstTrace = traces.find(tr => tr.neuronId === nId)
           const color = firstTrace ? COMPARTMENT_COLORS[firstTrace.compartment as Compartment] : '#8b949e'
           return (
-            <line key={`stim-${nId}`}
-              x1={MI.left} y1={y} x2={MI.left + iInnerW} y2={y}
-              stroke={color} strokeWidth={1} strokeDasharray="4 3" opacity={0.6} />
+            <polyline key={`stim-${nId}`}
+              points={pts} fill="none"
+              stroke={color} strokeWidth={1} strokeDasharray="4 3" opacity={0.7} />
           )
         })}
 

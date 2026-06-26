@@ -52,4 +52,41 @@ describe('networkStore', () => {
     useNetworkStore.getState().removeElectrode(neurons[0].id, 'soma')
     expect(useNetworkStore.getState().electrodes).toHaveLength(0)
   })
+
+  it('addNeuron stores model and kind, with no stimulus by default', () => {
+    useNetworkStore.getState().addNeuron({ x: 0, y: 0 }, 'graded')
+    useNetworkStore.getState().addNeuron({ x: 10, y: 0 }, 'hodgkin-huxley', 'afferent')
+    const ns = useNetworkStore.getState().neurons
+    expect(ns[0].model).toBe('graded')
+    expect(ns[1].kind).toBe('afferent')
+    expect(ns[0].params.I_stim).toBe(0)
+    expect(ns[1].params.I_stim).toBe(0)   // placed neurons start without external current
+  })
+
+  it('setEditorTool / setEditorModel update editor state', () => {
+    useNetworkStore.getState().setEditorTool('spiking')
+    useNetworkStore.getState().setEditorModel('lif')
+    expect(useNetworkStore.getState().editorTool).toBe('spiking')
+    expect(useNetworkStore.getState().editorModel).toBe('lif')
+  })
+
+  it('clearNetwork empties the network', () => {
+    useNetworkStore.getState().addNeuron({ x: 0, y: 0 }, 'lif')
+    useNetworkStore.getState().clearNetwork()
+    expect(useNetworkStore.getState().neurons).toHaveLength(0)
+    expect(useNetworkStore.getState().synapses).toHaveLength(0)
+  })
+
+  it('leaving editor mode resets editorTool to select', () => {
+    useNetworkStore.getState().setEditorTool('spiking')
+    useNetworkStore.getState().setMode('presentation')
+    expect(useNetworkStore.getState().editorTool).toBe('select')
+  })
+
+  it('setSimulationParams updates the simulation length', () => {
+    useNetworkStore.getState().setSimulationParams({ length: 500 })
+    const { simulationParams } = useNetworkStore.getState()
+    expect(simulationParams.length).toBe(500)
+    expect(simulationParams.step).toBe(0.1)
+  })
 })

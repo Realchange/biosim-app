@@ -1,10 +1,19 @@
-import type { HHParams as HHParamsType } from '../../types'
+import type { HHParams as HHParamsType, Compartment } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 
 interface Props { neuronId: string; params: HHParamsType; studentMode?: boolean }
 
+const STIM_SITES: { value: Compartment; label: string }[] = [
+  { value: 'soma',  label: 'Soma' },
+  { value: 'dend1', label: 'Dendrit 1' },
+  { value: 'dend2', label: 'Dendrit 2' },
+  { value: 'dend3', label: 'Dendrit 3' },
+]
+
 const ALL_FIELDS = [
-  { key: 'I_stim', label: 'I_stim (nA)',    min: 0,    max: 50,  step: 0.5 },
+  { key: 'I_stim',       label: 'I_stim (nA)',                min: 0,    max: 100, step: 0.5 },
+  { key: 'stimOnset',    label: 'Reizbeginn (ms)',            min: 0,    max: 100, step: 0.5 },
+  { key: 'stimDuration', label: 'Reizdauer (ms, 0=Dauer)',    min: 0,    max: 100, step: 0.5 },
   { key: 'g_Na',   label: 'g_Na (mS/cm²)',  min: 0,    max: 200, step: 1 },
   { key: 'g_K',    label: 'g_K (mS/cm²)',   min: 0,    max: 100, step: 1 },
   { key: 'g_Ca',   label: 'g_Ca (mS/cm²)',  min: 0,    max: 10,  step: 0.1 },
@@ -13,7 +22,7 @@ const ALL_FIELDS = [
   { key: 'C_m',    label: 'C_m (µF/cm²)',   min: 0.1,  max: 5,   step: 0.1 },
   { key: 'g_core', label: 'g_core (axial)', min: 0,    max: 1,   step: 0.01 },
 ]
-const STUDENT_KEYS = ['I_stim', 'g_Na', 'g_K', 'g_Ca']
+const STUDENT_KEYS = ['I_stim', 'stimOnset', 'stimDuration', 'g_Na', 'g_K', 'g_Ca']
 
 export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
   const { updateNeuron } = useNetworkStore()
@@ -21,16 +30,25 @@ export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
 
   return (
     <>
+      <label style={{ display: 'block', marginBottom: 8 }}>
+        <span style={{ color: '#8b949e', fontSize: 10 }}>Reizort</span>
+        <select
+          value={params.stimCompartment ?? 'soma'}
+          style={{ width: '100%', background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4, padding: '2px 4px', fontSize: 11 }}
+          onChange={e => updateNeuron(neuronId, { params: { ...params, stimCompartment: e.target.value as Compartment } })}>
+          {STIM_SITES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </label>
       {fields.map(f => (
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
           <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>
           <input type="range" min={f.min} max={f.max} step={f.step}
-            value={params[f.key as keyof HHParamsType]}
+            value={params[f.key as keyof HHParamsType] ?? 0}
             style={{ width: '100%' }}
             onChange={e => updateNeuron(neuronId, {
               params: { ...params, [f.key]: parseFloat(e.target.value) }
             })} />
-          <span style={{ color: '#c9d1d9', fontSize: 10 }}>{params[f.key as keyof HHParamsType]}</span>
+          <span style={{ color: '#c9d1d9', fontSize: 10 }}>{params[f.key as keyof HHParamsType] ?? 0}</span>
         </label>
       ))}
     </>

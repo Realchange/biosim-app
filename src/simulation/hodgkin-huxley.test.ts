@@ -32,4 +32,48 @@ describe('hhStep', () => {
     expect(result).toHaveProperty('dend2')
     expect(result).toHaveProperty('dend3')
   })
+
+  it('dendrites are passive: a strong dendritic input never produces a regenerative spike', () => {
+    const params = { ...DEFAULT_HH_PARAMS, I_stim: 0 }
+    let st = {
+      soma:  { ...DEFAULT_HH_COMPARTMENT },
+      dend1: { ...DEFAULT_HH_COMPARTMENT },
+      dend2: { ...DEFAULT_HH_COMPARTMENT },
+      dend3: { ...DEFAULT_HH_COMPARTMENT },
+    }
+    const dt = 0.025
+    let dendPeak = -100
+    for (let i = 0; i < 20 / dt; i++) {
+      const t = i * dt
+      const inj = t < 1 ? 10 : 0   // brief pulse into dend1 only
+      st = hhStep(st.soma, params, 0, dt, st, { dend1: inj, dend2: 0, dend3: 0 })
+      if (st.dend1.V > dendPeak) dendPeak = st.dend1.V
+    }
+    // It depolarises passively…
+    expect(dendPeak).toBeGreaterThan(-65)
+    // …but never overshoots into action-potential territory (no Na⁺ regeneration)
+    expect(dendPeak).toBeLessThan(0)
+  })
+
+  it('dendrites decay back toward rest after a passive depolarisation', () => {
+    const params = { ...DEFAULT_HH_PARAMS, I_stim: 0 }
+    let st = {
+      soma:  { ...DEFAULT_HH_COMPARTMENT },
+      dend1: { ...DEFAULT_HH_COMPARTMENT },
+      dend2: { ...DEFAULT_HH_COMPARTMENT },
+      dend3: { ...DEFAULT_HH_COMPARTMENT },
+    }
+    const dt = 0.025
+    // 2 ms pulse, record peak, then keep running and check it relaxes
+    let peak = -100
+    for (let i = 0; i < 2 / dt; i++) {
+      st = hhStep(st.soma, params, 0, dt, st, { dend1: 8, dend2: 0, dend3: 0 })
+      if (st.dend1.V > peak) peak = st.dend1.V
+    }
+    for (let i = 0; i < 30 / dt; i++) {
+      st = hhStep(st.soma, params, 0, dt, st, { dend1: 0, dend2: 0, dend3: 0 })
+    }
+    expect(st.dend1.V).toBeLessThan(peak)       // came back down
+    expect(st.dend1.V).toBeCloseTo(-65, 0)      // toward passive rest
+  })
 })

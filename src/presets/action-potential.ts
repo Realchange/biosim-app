@@ -10,12 +10,16 @@ export const actionPotentialPreset: Network = {
     position: { x: 300, y: 200 },
     model: 'hodgkin-huxley',
     params: {
-      I_stim: 10,
+      I_stim: 12,
+      // Brief 1 ms current pulse at t = 5 ms → exactly one clean action potential.
+      // Set stimDuration to 0 (or increase it) to drive a repetitive spike train instead.
+      stimOnset: 5, stimDuration: 1,
       E_Na: 50, E_K: -77, E_Ca: 120, E_leak: -54.387,
       g_Na: 120, g_K: 36, g_Ca: 0.3, g_leak: 0.3,
       C_m: 1.0, g_core: 0.1,
     },
   }],
   synapses: [],
-  simulation: { length: 100, step: 0.1 },
+  // Fine step (0.025 ms) so the fast upstroke/repolarisation render as a smooth curve.
+  simulation: { length: 30, step: 0.025 },
 }

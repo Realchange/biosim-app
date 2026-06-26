@@ -1,5 +1,9 @@
 import type { Neuron, Compartment } from '../../types'
 import { voltageToColor } from '../../types'
+import {
+  SOMA_CY, SOMA_R, ROD_X, ROD_W, ROD_TOP, ROD_H, ROD_RX, SEG_H,
+  DEND_SEGMENTS as SEGMENTS,
+} from './geometry'
 import styles from './NeuronSVG.module.css'
 
 interface Props {
@@ -9,83 +13,103 @@ interface Props {
   dend2Color?: string
   dend3Color?: string
   highlightCompartment?: Compartment | null
-  onClick?: (compartment: Compartment) => void
+  onClick?: (compartment: Compartment, e: React.MouseEvent) => void
   selected?: boolean
+  activity?: number   // 0..1 smoothed firing activity → soma glow halo
+}
+
+const SOMA_REST = '#f0883e'   // orange — active spike zone
+const DEND_REST = '#f0f6fc'   // white  — passive dendrites
+const HIGHLIGHT = '#1f6feb'   // blue   — electrode highlight (contrasts orange + white)
+
+// Soma is orange at rest and flashes red while it overshoots (the action potential).
+function somaFill(v: number): string {
+  return v > 0 ? '#da3633' : SOMA_REST
+}
+// Dendrites are white at rest; they warm up as injected current passively spreads.
+function dendFill(v: number): string {
+  return v > -50 ? voltageToColor(v) : DEND_REST
 }
 
 export function NeuronSVG({
   neuron, somaColor, dend1Color, dend2Color, dend3Color,
-  highlightCompartment, onClick, selected
+  highlightCompartment, onClick, selected, activity = 0,
 }: Props) {
-  const sc  = somaColor  ?? voltageToColor(neuron.compartments?.soma.V  ?? -70)
-  const d1c = dend1Color ?? voltageToColor(neuron.compartments?.dend1.V ?? -70)
-  const d2c = dend2Color ?? voltageToColor(neuron.compartments?.dend2.V ?? -70)
-  const d3c = dend3Color ?? voltageToColor(neuron.compartments?.dend3.V ?? -70)
+  const graded = neuron.model === 'graded'
+  // Graded neurons never spike → never flash red.
+  const sc  = somaColor  ?? (graded ? SOMA_REST : somaFill(neuron.compartments?.soma.V  ?? -70))
+  const segColors: Record<string, string> = {
+    dend1: dend1Color ?? dendFill(neuron.compartments?.dend1.V ?? -70),
+    dend2: dend2Color ?? dendFill(neuron.compartments?.dend2.V ?? -70),
+    dend3: dend3Color ?? dendFill(neuron.compartments?.dend3.V ?? -70),
+  }
 
   const hl = (c: Compartment) => highlightCompartment === c
-
+  // Pass the event up so the canvas can distinguish select / connect (shift) / electrode.
   const compartmentClick = (c: Compartment) => (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onClick?.(c)
+    onClick?.(c, e)
   }
+
+  const clipId = `rod-clip-${neuron.id}`
 
   return (
     <g className={selected ? styles.selected : ''}>
-      {/* Upper dendrite tree */}
-      <line x1="-18" y1="0" x2="-46" y2="0" stroke={d1c} strokeWidth={3.5} />
-      <circle cx="-46" cy="0" r={hl('dend1') ? 6 : 5}
-        fill="#f0883e" stroke={hl('dend1') ? '#fff' : '#d29922'}
-        strokeWidth={hl('dend1') ? 3 : 1.5}
-        data-compartment="dend1"
-        className={styles.compartmentHit}
-        onClick={compartmentClick('dend1')} style={{ cursor: 'pointer' }} />
-      <line x1="-46" y1="0" x2="-72" y2="-20" stroke={d2c} strokeWidth={2.5} />
-      <line x1="-46" y1="0" x2="-72" y2="20" stroke={d2c} strokeWidth={2.5} />
-      <circle cx="-72" cy="-20" r={hl('dend2') ? 5 : 3.5}
-        fill="#388bfd" stroke={hl('dend2') ? '#fff' : '#58a6ff'}
-        strokeWidth={hl('dend2') ? 3 : 1.5}
-        data-compartment="dend2"
-        className={styles.compartmentHit}
-        onClick={compartmentClick('dend2')} style={{ cursor: 'pointer' }} />
-      <circle cx="-72" cy="20" r={hl('dend2') ? 5 : 3.5}
-        fill="#388bfd" stroke={hl('dend2') ? '#fff' : '#58a6ff'}
-        strokeWidth={hl('dend2') ? 3 : 1.5}
-        data-compartment="dend2"
-        className={styles.compartmentHit}
-        onClick={compartmentClick('dend2')} style={{ cursor: 'pointer' }} />
-      {([[-72,-20,-90,-32],[-72,-20,-90,-12],[-72,20,-90,8],[-72,20,-90,32]] as number[][]).map(([x1,y1,x2,y2], i) => (
-        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={d3c} strokeWidth={1.5}
-          data-compartment="dend3" onClick={compartmentClick('dend3')} style={{ cursor: 'pointer' }} />
-      ))}
-      {[[-90,-32],[-90,-12],[-90,8],[-90,32]].map(([cx,cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r={hl('dend3') ? 4 : 3}
-          fill="#8957e5" stroke={hl('dend3') ? '#fff' : '#a371f7'}
-          strokeWidth={hl('dend3') ? 2.5 : 1.5}
-          data-compartment="dend3"
-          className={styles.compartmentHit}
-          onClick={compartmentClick('dend3')} style={{ cursor: 'pointer' }} />
-      ))}
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={ROD_X} y={ROD_TOP} width={ROD_W} height={ROD_H} rx={ROD_RX} ry={ROD_RX} />
+        </clipPath>
+        <filter id={`glow-${neuron.id}`} x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
 
-      {/* Soma */}
-      <ellipse cx="0" cy="0" rx="20" ry="16"
+      {/* Activity glow — the soma lights up with its firing rate */}
+      {activity > 0.02 && (
+        <circle cx={0} cy={SOMA_CY} r={SOMA_R + 4}
+          fill={sc} opacity={Math.min(0.85, activity)}
+          filter={`url(#glow-${neuron.id})`} pointerEvents="none" />
+      )}
+
+      {/* Dendrite rod — passive segments, voltage-coloured, clipped to a rounded bar */}
+      <g clipPath={`url(#${clipId})`}>
+        {SEGMENTS.map(seg => (
+          <rect key={seg.id}
+            x={ROD_X} y={seg.y} width={ROD_W} height={SEG_H}
+            fill={segColors[seg.id]}
+            stroke={hl(seg.id) ? HIGHLIGHT : 'none'}
+            strokeWidth={hl(seg.id) ? 4 : 0}
+            data-compartment={seg.id}
+            data-highlight={hl(seg.id) ? seg.id : undefined}
+            className={styles.compartmentHit}
+            onClick={compartmentClick(seg.id)}
+            style={{ cursor: 'pointer' }} />
+        ))}
+        {/* Segment dividers */}
+        {[ROD_TOP + SEG_H, ROD_TOP + 2 * SEG_H].map(y => (
+          <line key={y} x1={ROD_X} y1={y} x2={ROD_X + ROD_W} y2={y}
+            stroke="#0d1117" strokeWidth={1} pointerEvents="none" />
+        ))}
+      </g>
+      {/* Rod outline */}
+      <rect x={ROD_X} y={ROD_TOP} width={ROD_W} height={ROD_H} rx={ROD_RX} ry={ROD_RX}
+        fill="none" stroke="#30363d" strokeWidth={1.5} pointerEvents="none" />
+
+      {/* Afferent marker — small input triangle to the left of the soma */}
+      {neuron.kind === 'afferent' && (
+        <polygon data-afferent points={`-40,${SOMA_CY - 6} -40,${SOMA_CY + 6} -28,${SOMA_CY}`}
+          fill="#8b949e" pointerEvents="none" />
+      )}
+
+      {/* Soma — active spike-generating zone (dashed outline = non-spiking/graded) */}
+      <circle cx={0} cy={SOMA_CY} r={SOMA_R}
         fill={sc}
-        stroke={hl('soma') ? '#fff' : '#58a6ff'}
-        strokeWidth={hl('soma') ? 3 : 2}
+        stroke={hl('soma') ? HIGHLIGHT : '#30363d'}
+        strokeWidth={hl('soma') ? 4 : 2}
+        strokeDasharray={graded ? '4 3' : undefined}
         data-compartment="soma"
+        data-highlight={hl('soma') ? 'soma' : undefined}
         className={styles.compartmentHit}
         onClick={compartmentClick('soma')} style={{ cursor: 'pointer' }} />
-
-      {/* Axon */}
-      <line x1="20" y1="0" x2="80" y2="0" stroke="#f0f6fc" strokeWidth={3.5} />
-      {[28, 44, 60].map(x => (
-        <rect key={x} x={x} y="-5" width={12} height={10} rx={5}
-          fill="none" stroke="#d29922" strokeWidth={1.5} opacity={0.8} />
-      ))}
-      <circle cx="82" cy="0" r={6} fill="#da3633" stroke="#f85149" strokeWidth={2} />
-      <line x1="82" y1="-6" x2="96" y2="-18" stroke="#f0f6fc" strokeWidth={1.5} />
-      <line x1="82" y1="6"  x2="96" y2="18"  stroke="#f0f6fc" strokeWidth={1.5} />
-      <circle cx="98" cy="-20" r={4} fill="#da3633" stroke="#f85149" strokeWidth={1.5} />
-      <circle cx="98" cy="20"  r={4} fill="#da3633" stroke="#f85149" strokeWidth={1.5} />
     </g>
   )
 }
