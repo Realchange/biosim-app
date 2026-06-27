@@ -4,6 +4,10 @@ import { lifStep, DEFAULT_LIF_STATE, dendCableStep, makeDendCableState } from '.
 import type { LIFState, DendCableState } from './lif'
 import { hhStep, DEFAULT_HH_COMPARTMENT } from './hodgkin-huxley'
 import type { HHAllCompartments } from './hodgkin-huxley'
+import { stgStep, makeSTGState, stepGradedS, SYN_GLUT, SYN_CHOL } from './stg'
+import type { STGState } from './stg'
+import { stimulusCurrent } from '../utils/stimulus'
+import type { STGParams } from '../types'
 
 export interface NetworkStepResult {
   neurons: Neuron[]
@@ -27,6 +31,10 @@ const lifStates = new Map<string, LIFState>()
 const lifDendStates = new Map<string, DendCableState>()
 // Soma voltage of non-spiking (graded) neurons.
 const gradedStates = new Map<string, number>()
+// Full state of STG (Prinz) neurons.
+const stgStates = new Map<string, STGState>()
+// Activation s of each graded chemical synapse (keyed by synapse id).
+const gradedSynState = new Map<string, number>()
 const hhStates  = new Map<string, HHAllCompartments>()
 // Synaptic delay queue: Map<targetNeuronId, Array<{deliveryT, current, compartment}>>
 const synapticQueue = new Map<string, Array<{ deliveryT: number; current: number; compartment: string }>>()
@@ -65,6 +73,8 @@ export function resetSimulationState() {
   lifStates.clear()
   lifDendStates.clear()
   gradedStates.clear()
+  stgStates.clear()
+  gradedSynState.clear()
   hhStates.clear()
   synapticQueue.clear()
   synExcState.clear()
@@ -112,15 +122,8 @@ function enqueueSynapticEvent(targetId: string, deliveryT: number, current: numb
   synapticQueue.set(targetId, queue)
 }
 
-// Effective stimulus current at time currentT, honouring the optional pulse window.
-// stimDuration absent or 0 => sustained current (always on once past stimOnset).
-function stimAtTime(p: { I_stim: number; stimOnset?: number; stimDuration?: number }, currentT: number): number {
-  const onset = p.stimOnset ?? 0
-  if (currentT < onset) return 0
-  const dur = p.stimDuration ?? 0
-  if (dur > 0 && currentT >= onset + dur) return 0
-  return p.I_stim
-}
+// Effective stimulus current at time currentT (pulse or ramp waveform).
+const stimAtTime = stimulusCurrent
 
 export function networkStep(
   neurons: Neuron[],
@@ -133,6 +136,24 @@ export function networkStep(
   const spikes:   Record<string, boolean> = {}
   const synapticCurrents: Record<string, number> = {}
   const updatedNeurons: Neuron[] = []
+
+  // Graded chemical synapses (STG/Prinz): each step, advance every graded synapse's
+  // activation s from its presynaptic voltage (previous step), then accumulate a
+  // conductance (ḡ·s) and driving term (ḡ·s·E_syn) onto each postsynaptic neuron.
+  // These are folded into the STG step as a conductance toward E_syn.
+  const gradedG: Record<string, number> = {}   // Σ ḡ·s        (mS)  per target id
+  const gradedGE: Record<string, number> = {}  // Σ ḡ·s·E_syn        per target id
+  for (const syn of synapses) {
+    if (syn.mechanism !== 'graded') continue
+    const src = neurons.find(n => n.id === syn.sourceId)
+    const preV = src?.compartments?.soma?.V ?? -55
+    const { E, kminus } = syn.synClass === 'chol' ? SYN_CHOL : SYN_GLUT
+    const s = stepGradedS(gradedSynState.get(syn.id) ?? 0, preV, kminus, dt)
+    gradedSynState.set(syn.id, s)
+    const g = syn.conductance * s
+    gradedG[syn.targetId] = (gradedG[syn.targetId] ?? 0) + g
+    gradedGE[syn.targetId] = (gradedGE[syn.targetId] ?? 0) + g * E
+  }
 
   for (const neuron of neurons) {
     const synI = advanceSynapticCurrent(neuron.id, currentT, dt)
@@ -195,6 +216,28 @@ export function networkStep(
           dend3: { V: dnext.dend3 },
         },
       })
+    } else if (neuron.model === 'stg') {
+      // Prinz STG neuron, sub-stepped to dt ≤ 0.025 ms for stability. Driven by its
+      // own currents + the stimulus + graded synaptic input (as a conductance).
+      const params = neuron.params as STGParams
+      const prev = stgStates.get(neuron.id) ?? makeSTGState()
+      const prevV = prev.V
+      const gSyn = gradedG[neuron.id] ?? 0
+      const gSynE = gradedGE[neuron.id] ?? 0
+      const Iext = stimAtTime(params, currentT)
+      const SUB = Math.max(1, Math.ceil(dt / 0.025))
+      const subDt = dt / SUB
+      let st = prev
+      for (let k = 0; k < SUB; k++) st = stgStep(st, params, Iext, subDt, gSyn, gSynE)
+      stgStates.set(neuron.id, st)
+      voltages[neuron.id] = st.V
+      // Reported synaptic current: inward graded current Σ ḡ·s·(E_syn − V) (depolarising +).
+      synapticCurrents[neuron.id] = gSynE - gSyn * st.V
+      spikes[neuron.id] = prevV <= 0 && st.V > 0   // upward 0-crossing
+      updatedNeurons.push({
+        ...neuron,
+        compartments: { soma: { V: st.V }, dend1: { V: st.V }, dend2: { V: st.V }, dend3: { V: st.V } },
+      })
     } else {
       const rawParams = neuron.params as HHParams
       const stimI = stimAtTime(rawParams, currentT)
@@ -247,6 +290,7 @@ export function networkStep(
 
   // Enqueue synaptic events from neurons that spiked this step
   for (const synapse of synapses) {
+    if (synapse.mechanism === 'graded') continue   // graded synapses handled above
     if (!spikes[synapse.sourceId]) continue
     // Sign: excitatory = positive current, inhibitory = negative
     const sign = synapse.type === 'excitatory' ? 1 : -1

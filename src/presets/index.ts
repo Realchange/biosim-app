@@ -5,6 +5,7 @@ import { inhibitorySynapsePreset } from './inhibitory-synapse'
 import { reflexArcPreset }         from './reflex-arc'
 import { halfCenterPreset }        from './half-center'
 import { swimRhythmPreset }        from './swim-rhythm'
+import { pyloricPreset }           from './pyloric'
 
 export const PRESETS: { name: string; network: Network }[] = [
   { name: 'Aktionspotential',       network: actionPotentialPreset },
@@ -13,4 +14,5 @@ export const PRESETS: { name: string; network: Network }[] = [
   { name: 'Reflexbogen',            network: reflexArcPreset },
   { name: 'Half-Center-Oszillator', network: halfCenterPreset },
   { name: 'Schwimmrhythmus',        network: swimRhythmPreset },
+  { name: 'Pylorisches Netzwerk',   network: pyloricPreset },
 ]

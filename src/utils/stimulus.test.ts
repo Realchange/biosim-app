@@ -1,5 +1,36 @@
 import { describe, it, expect } from 'vitest'
-import { stimulusPoints } from './stimulus'
+import { stimulusPoints, stimulusCurrent } from './stimulus'
+
+describe('stimulusCurrent', () => {
+  it('pulse: returns I_stim within the window, 0 outside', () => {
+    const p = { I_stim: 10, stimOnset: 5, stimDuration: 4 } as const
+    expect(stimulusCurrent(p, 4)).toBe(0)
+    expect(stimulusCurrent(p, 6)).toBe(10)
+    expect(stimulusCurrent(p, 9)).toBe(0)
+  })
+
+  it('ramp: rises linearly over rampTime, then plateaus', () => {
+    const p = { I_stim: 10, stimOnset: 0, stimType: 'ramp', rampTime: 100, stimDuration: 0 } as const
+    expect(stimulusCurrent(p, 0)).toBeCloseTo(0, 1)
+    expect(stimulusCurrent(p, 50)).toBeCloseTo(5, 1)
+    expect(stimulusCurrent(p, 100)).toBeCloseTo(10, 1)
+    expect(stimulusCurrent(p, 250)).toBeCloseTo(10, 1)   // sustained plateau
+  })
+
+  it('ramp: velocity component adds current only during the rise', () => {
+    const p = { I_stim: 10, stimOnset: 0, stimType: 'ramp', rampTime: 100, stimDuration: 0, dynamicGain: 0.5 } as const
+    expect(stimulusCurrent(p, 50)).toBeCloseTo(5 + 5, 1)   // position 5 + velocity 0.5·10
+    expect(stimulusCurrent(p, 150)).toBeCloseTo(10, 1)     // plateau: velocity gone
+  })
+
+  it('ramp: acceleration adds brief pulses at onset and plateau-reach only', () => {
+    const base = { I_stim: 10, stimOnset: 0, stimType: 'ramp', rampTime: 100, stimDuration: 0 } as const
+    const acc = { ...base, accelGain: 1 }
+    expect(stimulusCurrent(acc, 1)).toBeGreaterThan(stimulusCurrent(base, 1))     // onset bump
+    expect(stimulusCurrent(acc, 99)).toBeGreaterThan(stimulusCurrent(base, 99))   // plateau-reach bump
+    expect(stimulusCurrent(acc, 50)).toBeCloseTo(stimulusCurrent(base, 50), 1)    // mid-ramp: no bump
+  })
+})
 
 describe('stimulusPoints', () => {
   it('produces a rising and falling edge for a finite pulse', () => {

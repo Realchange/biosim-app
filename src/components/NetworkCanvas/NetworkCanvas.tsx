@@ -6,6 +6,7 @@ import { StimElectrode } from '../Electrode/StimElectrode'
 import { SynapseArrow } from './SynapseArrow'
 import { COMPARTMENT_COLORS } from '../../types'
 import type { Compartment, LIFParams, HHParams } from '../../types'
+import { stimulusCurrent } from '../../utils/stimulus'
 import styles from './NetworkCanvas.module.css'
 
 // Injection point per compartment (left edge of the thermometer body).
@@ -16,14 +17,10 @@ const STIM_OFFSETS: Record<string, { x: number; y: number }> = {
   dend3: { x: -12, y: 43 },
 }
 
-// Is the neuron's stimulus injecting current at time t? (mirrors stimAtTime in the engine)
+// Is the neuron's stimulus injecting current at time t? (pulse or ramp)
 function stimActiveAt(p: LIFParams | HHParams, t: number): boolean {
   if ((p.I_stim ?? 0) <= 0) return false
-  const onset = p.stimOnset ?? 0
-  if (t < onset) return false
-  const dur = p.stimDuration ?? 0
-  if (dur > 0 && t >= onset + dur) return false
-  return true
+  return stimulusCurrent(p, t) > 0.01
 }
 
 export function NetworkCanvas() {

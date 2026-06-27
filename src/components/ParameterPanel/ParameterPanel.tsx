@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useNetworkStore } from '../../store/networkStore'
 import { LIFParamsPanel } from './LIFParams'
 import { HHParamsPanel } from './HHParams'
+import { STGParamsPanel } from './STGParams'
 import { SynapseParamsPanel } from './SynapseParams'
 import { PresetInfoModal } from '../PresetInfo/PresetInfoModal'
 import { EditorPalette } from './EditorPalette'
-import type { LIFParams, HHParams, AppMode } from '../../types'
-import { DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS } from '../../types'
+import type { LIFParams, HHParams, STGParams, AppMode } from '../../types'
+import { DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_STG_PARAMS } from '../../types'
 import type { NeuronModel } from '../../store/networkStore'
 import { PRESETS } from '../../presets'
 import { PRESET_INFO } from '../../presets/info'
@@ -68,24 +69,28 @@ export function ParameterPanel() {
 
       {selectedNeuron && (
         <div className={styles.section}>
-          <div className={styles.label}>Parameter — {{ lif: 'LIF', graded: 'Nicht-spikend', 'hodgkin-huxley': 'HH' }[selectedNeuron.model]}</div>
+          <div className={styles.label}>Parameter — {{ lif: 'LIF', graded: 'Nicht-spikend', 'hodgkin-huxley': 'HH', stg: 'STG (Prinz)' }[selectedNeuron.model]}</div>
           {mode === 'editor' && (
             <select value={selectedNeuron.model}
               style={{ marginBottom: 8, width: '100%', background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4 }}
               onChange={e => {
                 const m = e.target.value as NeuronModel
-                const base = m === 'graded' ? DEFAULT_GRADED_PARAMS : m === 'lif' ? DEFAULT_LIF_PARAMS : DEFAULT_HH_PARAMS
-                const keepStim = (selectedNeuron.params as LIFParams | HHParams).I_stim ?? 0
-                useNetworkStore.getState().updateNeuron(selectedNeuron.id, { model: m, params: { ...base, I_stim: keepStim } })
+                const base = m === 'graded' ? DEFAULT_GRADED_PARAMS
+                  : m === 'stg' ? DEFAULT_STG_PARAMS
+                  : m === 'lif' ? DEFAULT_LIF_PARAMS : DEFAULT_HH_PARAMS
+                useNetworkStore.getState().updateNeuron(selectedNeuron.id, { model: m, params: { ...base } })
               }}>
               <option value="hodgkin-huxley">Spikend (HH)</option>
               <option value="lif">Spikend (LIF)</option>
+              <option value="stg">STG (Prinz)</option>
               <option value="graded">Nicht-spikend</option>
             </select>
           )}
-          {/* HH uses its own param set; LIF and graded (non-spiking) both use LIFParams. */}
+          {/* Each model has its own param set. */}
           {selectedNeuron.model === 'hodgkin-huxley'
             ? <HHParamsPanel  neuronId={selectedNeuron.id} params={selectedNeuron.params as HHParams}  studentMode={studentMode} />
+            : selectedNeuron.model === 'stg'
+            ? <STGParamsPanel neuronId={selectedNeuron.id} params={selectedNeuron.params as STGParams} />
             : <LIFParamsPanel neuronId={selectedNeuron.id} params={selectedNeuron.params as LIFParams} studentMode={studentMode} />}
           <div style={{ color: '#8b949e', fontSize: 9, marginTop: 8, lineHeight: 1.4 }}>
             💡 Klicke auf Soma oder Dendrit im Neuron um eine Messelektrode zu setzen.

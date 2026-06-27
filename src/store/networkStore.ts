@@ -4,12 +4,12 @@ import type {
   Neuron, Synapse, Network, AppMode, Electrode, Compartment, SimulationParams,
 } from '../types'
 import {
-  DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_SYNAPSE,
+  DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_STG_PARAMS, DEFAULT_SYNAPSE,
 } from '../types'
 
-export type NeuronModel = 'lif' | 'hodgkin-huxley' | 'graded'
+export type NeuronModel = 'lif' | 'hodgkin-huxley' | 'graded' | 'stg'
 export type EditorTool = 'select' | 'synapse' | 'spiking' | 'nonspiking' | 'afferent'
-export type EditorModel = 'hodgkin-huxley' | 'lif'
+export type EditorModel = 'hodgkin-huxley' | 'lif' | 'stg'
 
 // Voltage trace: per-electrode, array of [t, V] pairs
 export type VoltageTrace = { neuronId: string; compartment: Compartment; points: [number, number][] }
@@ -81,6 +81,7 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
   addNeuron: (pos, model, kind) => set(s => {
     const base = model === 'graded'
       ? { ...DEFAULT_GRADED_PARAMS }
+      : model === 'stg' ? { ...DEFAULT_STG_PARAMS }
       : model === 'lif' ? { ...DEFAULT_LIF_PARAMS } : { ...DEFAULT_HH_PARAMS }
     // Placed neurons receive NO external current by default — the user decides which
     // neurons get a stimulus by raising their I_stim in the parameter panel.
@@ -111,14 +112,17 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     neurons: s.neurons.map(n => n.id === id ? { ...n, position: pos } : n),
   })),
 
-  addSynapse: (sourceId, targetId) => set(s => ({
-    synapses: [...s.synapses, {
-      id: uuidv4(),
-      sourceId,
-      targetId,
-      ...DEFAULT_SYNAPSE,
-    }],
-  })),
+  addSynapse: (sourceId, targetId) => set(s => {
+    // A synapse between two STG neurons defaults to a graded chemical synapse
+    // (the only kind STG neurons use); everything else defaults to spike-driven.
+    const bothSTG = s.neurons.find(n => n.id === sourceId)?.model === 'stg'
+      && s.neurons.find(n => n.id === targetId)?.model === 'stg'
+    const base = bothSTG
+      ? { ...DEFAULT_SYNAPSE, mechanism: 'graded' as const, synClass: 'glut' as const,
+          targetCompartment: 'soma' as const, conductance: 3e-4, deliveryTime: 0 }
+      : { ...DEFAULT_SYNAPSE }
+    return { synapses: [...s.synapses, { id: uuidv4(), sourceId, targetId, ...base }] }
+  }),
 
   removeSynapse: (id) => set(s => ({ synapses: s.synapses.filter(sy => sy.id !== id) })),
 
@@ -186,19 +190,24 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
 
   setSimulationParams: (patch) => set(s => ({ simulationParams: { ...s.simulationParams, ...patch } })),
 
-  loadNetwork: (network) => set({
-    neurons: network.neurons,
-    synapses: network.synapses,
-    simulationParams: network.simulation,
-    selectedId: network.neurons.length > 0 ? network.neurons[0].id : null,
-    electrodes: network.neurons.length > 0
-      ? [{ neuronId: network.neurons[0].id, compartment: 'soma' }]
-      : [],
-    traces: network.neurons.length > 0
-      ? [{ neuronId: network.neurons[0].id, compartment: 'soma', points: [] }]
-      : [],
-    currentTraces: network.neurons.length > 0
-      ? [{ neuronId: network.neurons[0].id, points: [] }]
-      : [],
-  }),
+  loadNetwork: (network) => {
+    // Use the preset's own electrodes if it defines them, else default to the first
+    // neuron's soma.
+    const electrodes = network.electrodes && network.electrodes.length > 0
+      ? network.electrodes
+      : network.neurons.length > 0
+        ? [{ neuronId: network.neurons[0].id, compartment: 'soma' as const }]
+        : []
+    // One current trace per measured neuron (deduplicated).
+    const measuredNeurons = [...new Set(electrodes.map(e => e.neuronId))]
+    set({
+      neurons: network.neurons,
+      synapses: network.synapses,
+      simulationParams: network.simulation,
+      selectedId: network.neurons.length > 0 ? network.neurons[0].id : null,
+      electrodes,
+      traces: electrodes.map(e => ({ neuronId: e.neuronId, compartment: e.compartment, points: [] })),
+      currentTraces: measuredNeurons.map(neuronId => ({ neuronId, points: [] })),
+    })
+  },
 }))

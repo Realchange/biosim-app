@@ -1,5 +1,6 @@
 import type { HHParams as HHParamsType, Compartment } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
+import { StimParams } from './StimParams'
 
 interface Props { neuronId: string; params: HHParamsType; studentMode?: boolean }
 
@@ -11,9 +12,6 @@ const STIM_SITES: { value: Compartment; label: string }[] = [
 ]
 
 const ALL_FIELDS = [
-  { key: 'I_stim',       label: 'I_stim (nA)',                min: 0,    max: 100, step: 0.5 },
-  { key: 'stimOnset',    label: 'Reizbeginn (ms)',            min: 0,    max: 100, step: 0.5 },
-  { key: 'stimDuration', label: 'Reizdauer (ms, 0=Dauer)',    min: 0,    max: 100, step: 0.5 },
   { key: 'g_Na',   label: 'g_Na (mS/cm²)',  min: 0,    max: 200, step: 1 },
   { key: 'g_K',    label: 'g_K (mS/cm²)',   min: 0,    max: 100, step: 1 },
   { key: 'g_Ca',   label: 'g_Ca (mS/cm²)',  min: 0,    max: 10,  step: 0.1 },
@@ -22,7 +20,7 @@ const ALL_FIELDS = [
   { key: 'C_m',    label: 'C_m (µF/cm²)',   min: 0.1,  max: 5,   step: 0.1 },
   { key: 'g_core', label: 'g_core (axial)', min: 0,    max: 1,   step: 0.01 },
 ]
-const STUDENT_KEYS = ['I_stim', 'stimOnset', 'stimDuration', 'g_Na', 'g_K', 'g_Ca']
+const STUDENT_KEYS = ['g_Na', 'g_K', 'g_Ca']
 
 export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
   const { updateNeuron } = useNetworkStore()
@@ -39,6 +37,7 @@ export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
           {STIM_SITES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </label>
+      <StimParams neuronId={neuronId} params={params} iStimMax={100} />
       {fields.map(f => (
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
           <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>

@@ -45,6 +45,7 @@ export function EditorPalette() {
           onChange={e => setEditorModel(e.target.value as EditorModel)}>
           <option value="hodgkin-huxley">Hodgkin-Huxley</option>
           <option value="lif">LIF</option>
+          <option value="stg">STG (Prinz)</option>
         </select>
       </label>
       <div className={styles.hint}>

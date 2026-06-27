@@ -4,6 +4,7 @@ import { useNetworkStore } from '../../store/networkStore'
 import { COMPARTMENT_COLORS } from '../../types'
 import type { LIFParams, HHParams } from '../../types'
 import { FIXED_V_RANGE } from '../../utils/scale'
+import { stimulusCurrent } from '../../utils/stimulus'
 import styles from './VoltageGraph.module.css'
 
 const W = 280, PH = 120
@@ -17,17 +18,17 @@ interface Props {
   onExpand?: (neuronId: string) => void
 }
 
-interface StimBand { onset: number; end: number }
+type StimSpec = LIFParams | HHParams
 
 // One compact voltage plot for a single neuron (its measured compartments).
 function NeuronPanel({
-  label, traces, tMin, tMax, stimBand, showTimeLabel, onExpand,
+  label, traces, tMin, tMax, stim, showTimeLabel, onExpand,
 }: {
   label: string
   traces: VoltageTrace[]
   tMin: number
   tMax: number
-  stimBand: StimBand | null
+  stim: StimSpec | null   // the neuron's stimulus params if it is stimulated (I_stim > 0)
   showTimeLabel: boolean
   onExpand?: () => void
 }) {
@@ -59,13 +60,27 @@ function NeuronPanel({
       <svg width={W} height={PH} viewBox={`0 0 ${W} ${PH}`} style={{ overflow: 'visible' }}>
         <rect x={MARGIN.left} y={MARGIN.top} width={innerW} height={innerH} fill="#0d1117" rx={3} />
 
-        {/* Stimulus pulse window */}
-        {stimBand && (() => {
-          const x0 = Math.max(MARGIN.left, tToX(Math.max(stimBand.onset, tMin)))
-          const x1 = Math.min(MARGIN.left + innerW, tToX(Math.min(stimBand.end, tMax)))
-          return x1 > x0
-            ? <rect x={x0} y={MARGIN.top} width={x1 - x0} height={innerH} fill="#f0883e" opacity={0.18} />
-            : null
+        {/* Stimulus current — drawn faintly behind the voltage trace, normalised to its
+            own peak so the shape (pulse / ramp / + velocity) is visible without a scale. */}
+        {stim && (() => {
+          const peak = stim.I_stim * (1 + (stim.dynamicGain ?? 0) + (stim.accelGain ?? 0))
+          if (peak <= 0) return null
+          const baseY = MARGIN.top + innerH
+          const sToY = (I: number) => baseY - (I / peak) * innerH * 0.7
+          const N = 80
+          const pts: string[] = []
+          for (let i = 0; i <= N; i++) {
+            const t = tMin + (tMax - tMin) * (i / N)
+            pts.push(`${tToX(t).toFixed(1)},${sToY(stimulusCurrent(stim, t)).toFixed(1)}`)
+          }
+          const line = pts.join(' ')
+          const area = `${tToX(tMin).toFixed(1)},${baseY} ${line} ${tToX(tMax).toFixed(1)},${baseY}`
+          return (
+            <g pointerEvents="none">
+              <polygon points={area} fill="#f0883e" opacity={0.1} />
+              <polyline points={line} fill="none" stroke="#f0883e" opacity={0.4} strokeWidth={1} />
+            </g>
+          )
         })()}
 
         {/* Y grid + labels */}
@@ -142,13 +157,13 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
   const tMax = running ? currentT : Math.max(WINDOW_MS, ...traces.flatMap(tr => tr.points.map(([t]) => t)), 0)
   const tMin = running ? Math.max(0, tMax - WINDOW_MS) : 0
 
-  // Stimulus pulse window per neuron (finite pulses only).
-  const stimBandFor = (neuronId: string): StimBand | null => {
+  // A stimulated neuron's stimulus params (for the faint current trace); else null.
+  // Works for LIF, HH and graded — all carry I_stim.
+  const stimFor = (neuronId: string): StimSpec | null => {
     const n = neurons.find(nn => nn.id === neuronId)
     if (!n) return null
     const p = n.params as LIFParams | HHParams
-    const dur = p.stimDuration ?? 0
-    return dur > 0 ? { onset: p.stimOnset ?? 0, end: (p.stimOnset ?? 0) + dur } : null
+    return (p.I_stim ?? 0) > 0 ? p : null
   }
 
   if (traces.length === 0) {
@@ -170,7 +185,7 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
             label={g.label}
             traces={g.traces}
             tMin={tMin} tMax={tMax}
-            stimBand={stimBandFor(g.id)}
+            stim={stimFor(g.id)}
             showTimeLabel={i === groups.length - 1}
             onExpand={onExpand ? () => onExpand(g.id) : undefined} />
         ))}

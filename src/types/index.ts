@@ -4,19 +4,45 @@ export type AppMode = 'presentation' | 'editor' | 'student'
 
 export type Compartment = 'soma' | 'dend1' | 'dend2' | 'dend3'
 
-export interface LIFParams {
+// Stimulus waveform spec, shared by LIF and HH neurons.
+//  - 'pulse': rectangular — I_stim from stimOnset for stimDuration (0 = sustained).
+//  - 'ramp':  I_stim·position ramps up over rampTime then holds (stimDuration = plateau
+//             hold, 0 = sustained), plus an optional velocity term during the rise
+//             (dynamicGain) and brief acceleration pulses at onset & plateau (accelGain).
+//             Models muscle-spindle / Ia sensitivities (position / velocity / acceleration).
+export interface StimulusSpec {
+  stimType?: 'pulse' | 'ramp'   // default 'pulse'
+  stimOnset?: number            // ms, stimulus starts; default 0
+  stimDuration?: number         // ms; pulse: on-time, ramp: plateau hold; 0 = sustained
+  rampTime?: number             // ms, ramp rise time; default 50
+  dynamicGain?: number          // ramp velocity sensitivity (× I_stim during the rise); 0 = off
+  accelGain?: number            // ramp acceleration sensitivity (brief pulses at onset & plateau); 0 = off
+}
+
+export interface LIFParams extends StimulusSpec {
   E_rest: number        // mV, default -70
   V_threshold: number   // mV, default -55
   tau_m: number         // ms, default 10
   R_m: number           // MΩ, default 10
   I_stim: number        // nA, default 0.5
-  // Stimulus pulse window. Absent/0 stimDuration = sustained current (always on from stimOnset).
-  stimOnset?: number    // ms, stimulus starts; default 0
-  stimDuration?: number // ms, how long the stimulus stays on; 0 = sustained
   adapt?: number        // spike-triggered adaptation/fatigue (nA per spike); 0 = off (default)
 }
 
-export interface HHParams {
+// Prinz, Bucher & Marder (2004) STG neuron: 8 maximal conductances (mS/cm²).
+// Reversal potentials and Ca²⁺ dynamics are fixed in the engine.
+export interface STGParams extends StimulusSpec {
+  gNa: number
+  gCaT: number
+  gCaS: number
+  gA: number
+  gKCa: number
+  gKd: number
+  gH: number
+  gLeak: number
+  I_stim: number   // injected current (µA); 0 = autonomous (default)
+}
+
+export interface HHParams extends StimulusSpec {
   I_stim: number        // nA delivered to soma
   E_Na: number          // mV, default +50
   E_K: number           // mV, default -77
@@ -28,9 +54,6 @@ export interface HHParams {
   g_leak: number        // mS/cm², default 0.3
   C_m: number           // µF/cm², default 1.0
   g_core: number        // axial conductance between soma and dendrites, default 0.1
-  // Stimulus pulse window. Absent/0 stimDuration = sustained current (always on from stimOnset).
-  stimOnset?: number    // ms, stimulus starts; default 0
-  stimDuration?: number // ms, how long the stimulus stays on; 0 = sustained
   // Where the stimulus current is injected; default 'soma'. Injecting into a
   // dendrite low-pass filters the input through the cable → smoother soma response.
   stimCompartment?: Compartment
@@ -49,8 +72,8 @@ export interface Neuron {
   position: { x: number; y: number }
   label?: string        // optional role name shown instead of "Neuron N"
   kind?: 'afferent'     // editor marker: sensory input neuron (spiking, visual only)
-  model: 'lif' | 'hodgkin-huxley' | 'graded'
-  params: LIFParams | HHParams
+  model: 'lif' | 'hodgkin-huxley' | 'graded' | 'stg'
+  params: LIFParams | HHParams | STGParams
   // HH only: per-compartment simulation state (soma + 3 dendrite levels)
   // LIF: compartments field is absent; all synaptic input collapses to soma
   //      regardless of targetCompartment — the field is used for visualization only
@@ -68,8 +91,11 @@ export interface Synapse {
   targetId: string
   targetCompartment: Compartment
   type: 'excitatory' | 'inhibitory'
-  conductance: number     // nS, default 1
+  conductance: number     // spike synapse: nS; graded synapse: ḡ_syn in mS
   deliveryTime: number    // ms synaptic delay, default 1
+  // Graded chemical synapse (STG / Prinz): continuous, voltage-dependent release.
+  mechanism?: 'spike' | 'graded'   // default 'spike'
+  synClass?: 'glut' | 'chol'       // graded only: E_syn/kminus preset (default glut)
 }
 
 export interface SimulationParams {
@@ -83,6 +109,7 @@ export interface Network {
   neurons: Neuron[]
   synapses: Synapse[]
   simulation: SimulationParams
+  electrodes?: Electrode[]   // optional: measuring electrodes to place on load
 }
 
 // Electrode placed on a compartment of a specific neuron
@@ -116,6 +143,13 @@ export const DEFAULT_LIF_PARAMS: LIFParams = {
 export const DEFAULT_GRADED_PARAMS: LIFParams = {
   E_rest: -70, V_threshold: -55, tau_m: 12, R_m: 10, I_stim: 0,
   stimOnset: 0, stimDuration: 0,
+}
+
+// Default STG params = Prinz "PM_4" — the AB/PD pacemaker (bursts intrinsically).
+// [gNa, gCaT, gCaS, gA, gKCa, gKd, gH, gLeak]
+export const DEFAULT_STG_PARAMS: STGParams = {
+  gNa: 300, gCaT: 2.5, gCaS: 2, gA: 10, gKCa: 5, gKd: 125, gH: 0.01, gLeak: 0,
+  I_stim: 0, stimOnset: 0, stimDuration: 0,
 }
 
 export const DEFAULT_HH_PARAMS: HHParams = {
