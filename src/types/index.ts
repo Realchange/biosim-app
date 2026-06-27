@@ -40,6 +40,7 @@ export interface STGParams extends StimulusSpec {
   gH: number
   gLeak: number
   I_stim: number   // injected current (µA); 0 = autonomous (default)
+  noise?: number   // std of Gaussian noise current injected each step (µA); reference uses 0.001
 }
 
 export interface HHParams extends StimulusSpec {

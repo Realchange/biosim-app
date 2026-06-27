@@ -11,12 +11,24 @@ export function SimControls() {
   const loopRef = useRef(sim.loop)
   const startRef = useRef<() => void>(() => {})
   useEffect(() => { loopRef.current = sim.loop }, [sim.loop])
+  // Terminate any running worker when this component unmounts (e.g. an error
+  // boundary remounts the tree) so an orphaned worker can't keep posting.
+  useEffect(() => () => { workerRef.current?.terminate() }, [])
 
   const start = () => {
     if (workerRef.current) workerRef.current.terminate()
     clearTraces()
     setActivity({})
     setSim({ running: true, paused: false, t: 0 })
+
+    // Decimate stored trace points to a fixed budget so the traces stay small
+    // regardless of step size / duration (otherwise a fine, long run stores
+    // hundreds of thousands of points and the tab freezes). Spike detection below
+    // still uses the full per-step arrays.
+    const { simulationParams: sp, neurons: currentNeurons, synapses: currentSynapses, sim: currentSim } = useNetworkStore.getState()
+    const step = sp.step
+    const TRACE_BUDGET = 4000
+    const stride = Math.max(1, Math.round((sp.length / step) / TRACE_BUDGET))
 
     const worker = new Worker(new URL('../../simulation/worker.ts', import.meta.url), { type: 'module' })
     workerRef.current = worker
@@ -48,17 +60,21 @@ export function SimControls() {
             ? msg.voltages[el.neuronId]
             : msg.compartmentVoltages[el.neuronId]?.[el.compartment as 'dend1' | 'dend2' | 'dend3']
           if (!vArr) continue
+          const vPts: [number, number][] = []
           for (let pi = 0; pi < vArr.length; pi++) {
-            appendTracePoints(el.neuronId, el.compartment, msg.times[pi], vArr[pi] ?? -70)
+            if (Math.round(msg.times[pi] / step) % stride === 0) vPts.push([msg.times[pi], vArr[pi] ?? -70])
           }
+          appendTracePoints(el.neuronId, el.compartment, vPts)
           // Append current trace once per neuron (not per electrode compartment)
           if (!seenCurrentNeurons.has(el.neuronId)) {
             seenCurrentNeurons.add(el.neuronId)
             const iArr = msg.currents[el.neuronId]
             if (iArr) {
+              const iPts: [number, number][] = []
               for (let pi = 0; pi < iArr.length; pi++) {
-                appendCurrentPoints(el.neuronId, msg.times[pi], iArr[pi])
+                if (Math.round(msg.times[pi] / step) % stride === 0) iPts.push([msg.times[pi], iArr[pi]])
               }
+              appendCurrentPoints(el.neuronId, iPts)
             }
           }
         }
@@ -72,8 +88,7 @@ export function SimControls() {
       }
     }
 
-    const { simulationParams, neurons: currentNeurons, synapses: currentSynapses, sim: currentSim } = useNetworkStore.getState()
-    worker.postMessage({ type: 'start', neurons: currentNeurons, synapses: currentSynapses, simulation: simulationParams, speed: currentSim.speed })
+    worker.postMessage({ type: 'start', neurons: currentNeurons, synapses: currentSynapses, simulation: sp, speed: currentSim.speed })
   }
   // Keep the ref pointing at the latest start() so the loop restart uses fresh state.
   useEffect(() => { startRef.current = start })

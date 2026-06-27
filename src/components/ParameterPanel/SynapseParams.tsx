@@ -1,5 +1,6 @@
 import type { Synapse, Compartment } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
+import { NumberField } from '../common/NumberField'
 
 const TARGET_SITES: { value: Compartment; label: string }[] = [
   { value: 'dend1', label: 'Dendrit 1' },
@@ -37,11 +38,10 @@ export function SynapseParamsPanel({ synapse }: { synapse: Synapse }) {
             </select>
           </label>
           <label style={{ display: 'block' }}>
-            {/* ḡ_syn is stored in mS; the slider works in µS for a friendly range. */}
-            <span style={labelStyle}>Synaptische Leitfähigkeit ḡ (µS)</span>
-            <input type="range" min={0} max={2} step={0.01} value={synapse.conductance * 1000} style={{ width: '100%' }}
-              onChange={e => updateSynapse(synapse.id, { conductance: parseFloat(e.target.value) / 1000 })} />
-            <span style={valStyle}>{(synapse.conductance * 1000).toFixed(2)} µS</span>
+            {/* ḡ_syn is stored in mS; shown in nS (values span ~0.1–700 nS). */}
+            <span style={labelStyle}>Synaptische Leitfähigkeit ḡ (nS)</span>
+            <NumberField value={synapse.conductance * 1e6} step={1} min={0}
+              onChange={v => updateSynapse(synapse.id, { conductance: v / 1e6 })} />
           </label>
         </>
       ) : (

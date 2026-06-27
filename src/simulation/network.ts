@@ -36,6 +36,23 @@ const stgStates = new Map<string, STGState>()
 // Activation s of each graded chemical synapse (keyed by synapse id).
 const gradedSynState = new Map<string, number>()
 const hhStates  = new Map<string, HHAllCompartments>()
+
+// Seeded RNG for STG membrane noise (deterministic & reproducible, like the
+// reference's seeded noise). Reset in resetSimulationState. Box–Muller Gaussian.
+const NOISE_SEED = 5340
+let noiseState = NOISE_SEED
+let gaussSpare: number | null = null
+function nextUniform(): number {
+  noiseState = (noiseState * 1103515245 + 12345) & 0x7fffffff
+  return noiseState / 0x7fffffff
+}
+function gaussian(): number {
+  if (gaussSpare !== null) { const s = gaussSpare; gaussSpare = null; return s }
+  const u = Math.max(1e-9, nextUniform()), v = nextUniform()
+  const mag = Math.sqrt(-2 * Math.log(u))
+  gaussSpare = mag * Math.sin(2 * Math.PI * v)
+  return mag * Math.cos(2 * Math.PI * v)
+}
 // Synaptic delay queue: Map<targetNeuronId, Array<{deliveryT, current, compartment}>>
 const synapticQueue = new Map<string, Array<{ deliveryT: number; current: number; compartment: string }>>()
 // Decaying synaptic current per target compartment (the EPSC/IPSC waveform).
@@ -76,6 +93,8 @@ export function resetSimulationState() {
   stgStates.clear()
   gradedSynState.clear()
   hhStates.clear()
+  noiseState = NOISE_SEED
+  gaussSpare = null
   synapticQueue.clear()
   synExcState.clear()
   synInhState.clear()
@@ -225,10 +244,15 @@ export function networkStep(
       const gSyn = gradedG[neuron.id] ?? 0
       const gSynE = gradedGE[neuron.id] ?? 0
       const Iext = stimAtTime(params, currentT)
+      const noiseStd = params.noise ?? 0
       const SUB = Math.max(1, Math.ceil(dt / 0.025))
       const subDt = dt / SUB
       let st = prev
-      for (let k = 0; k < SUB; k++) st = stgStep(st, params, Iext, subDt, gSyn, gSynE)
+      // Gaussian noise current injected each 0.025 ms sub-step (as in the reference).
+      for (let k = 0; k < SUB; k++) {
+        const I = noiseStd > 0 ? Iext + noiseStd * gaussian() : Iext
+        st = stgStep(st, params, I, subDt, gSyn, gSynE)
+      }
       stgStates.set(neuron.id, st)
       voltages[neuron.id] = st.V
       // Reported synaptic current: inward graded current Σ ḡ·s·(E_syn − V) (depolarising +).

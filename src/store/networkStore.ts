@@ -50,8 +50,8 @@ interface NetworkState {
   setMode: (mode: AppMode) => void
   addElectrode: (neuronId: string, compartment: Compartment) => void
   removeElectrode: (neuronId: string, compartment: Compartment) => void
-  appendTracePoints: (neuronId: string, compartment: Compartment, t: number, V: number) => void
-  appendCurrentPoints: (neuronId: string, t: number, I: number) => void
+  appendTracePoints: (neuronId: string, compartment: Compartment, pts: [number, number][]) => void
+  appendCurrentPoints: (neuronId: string, pts: [number, number][]) => void
   clearTraces: () => void
   setSim: (patch: Partial<SimState>) => void
   setActivity: (activity: Record<string, number>) => void
@@ -165,17 +165,20 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
     }
   }),
 
-  appendTracePoints: (neuronId, compartment, t, V) => set(s => ({
+  // Append a BATCH of points in one update. Appending point-by-point copied the
+  // whole (growing) array per point — O(n²) over a run, which froze the tab on
+  // long simulations. One concat per batch keeps it manageable.
+  appendTracePoints: (neuronId, compartment, pts) => set(s => (pts.length === 0 ? s : {
     traces: s.traces.map(tr =>
       tr.neuronId === neuronId && tr.compartment === compartment
-        ? { ...tr, points: [...tr.points, [t, V]] }
+        ? { ...tr, points: tr.points.concat(pts) }
         : tr
     ),
   })),
 
-  appendCurrentPoints: (neuronId, t, I) => set(s => ({
+  appendCurrentPoints: (neuronId, pts) => set(s => (pts.length === 0 ? s : {
     currentTraces: s.currentTraces.map(ct =>
-      ct.neuronId === neuronId ? { ...ct, points: [...ct.points, [t, I]] } : ct
+      ct.neuronId === neuronId ? { ...ct, points: ct.points.concat(pts) } : ct
     ),
   })),
 

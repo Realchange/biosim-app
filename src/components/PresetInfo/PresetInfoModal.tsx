@@ -19,6 +19,15 @@ function downloadInfo(name: string, info: PresetInfo) {
       ...info.comparison.points.map(p => `- ${p.ok ? '✓' : '≈'} ${p.text}`),
       '', info.comparison.litCaption, info.comparison.litHref,
     ] : []),
+    ...(info.citations ? [
+      '', '## Quellen & Zitierung', '',
+      ...info.citations.flatMap(c => [
+        `**${c.role}**${c.requested ? ' (von den Autoren erbeten)' : ''}`,
+        c.text,
+        ...(c.doi ? [`doi:${c.doi}`] : []),
+        '', '```bibtex', c.bibtex, '```', '',
+      ]),
+    ] : []),
   ]
   const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -51,11 +60,15 @@ export function PresetInfoModal({ name, info, onClose }: Props) {
             <p className={styles.compareIntro}>{info.comparison.intro}</p>
             <figure className={styles.figure}>
               <img src={info.comparison.simImg} alt="BioSim-Simulation der pylorischen Spuren" />
-              <figcaption>BioSim — Simulation (Prinz-Modell)</figcaption>
+              <figcaption>① BioSim — unsere Simulation (validierter Parametersatz, mit Rauschen)</figcaption>
+            </figure>
+            <figure className={styles.figure}>
+              <img src={info.comparison.refImg} alt="Referenzsimulator mackelab/pyloric" />
+              <figcaption>② Referenzsimulator (mackelab/pyloric) — {info.comparison.refCaption}</figcaption>
             </figure>
             <figure className={styles.figure}>
               <img src={info.comparison.litImg} alt="Literatur: intrazelluläre Ableitung PD/LP/PY" />
-              <figcaption>
+              <figcaption>③
                 {info.comparison.litCaption}{' '}
                 <a href={info.comparison.litHref} target="_blank" rel="noopener noreferrer">Originalartikel ↗</a>
               </figcaption>
@@ -67,6 +80,26 @@ export function PresetInfoModal({ name, info, onClose }: Props) {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {info.citations && (
+          <div className={styles.cite}>
+            <div className={styles.tipsTitle}>Quellen &amp; Zitierung</div>
+            {info.citations.map((c, i) => (
+              <div key={i} className={styles.citeItem}>
+                <div className={styles.citeRole}>
+                  {c.role}{c.requested && <span className={styles.citeReq}>von den Autoren erbeten</span>}
+                </div>
+                <div className={styles.citeText}>{c.text}</div>
+                <div className={styles.citeActions}>
+                  {c.doi && (
+                    <a href={`https://doi.org/${c.doi}`} target="_blank" rel="noopener noreferrer">doi:{c.doi} ↗</a>
+                  )}
+                  <button onClick={() => navigator.clipboard?.writeText(c.bibtex)}>BibTeX kopieren</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

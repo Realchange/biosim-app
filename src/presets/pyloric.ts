@@ -1,31 +1,26 @@
 import type { Network } from '../types'
 
 // Pyloric network of the crab stomatogastric ganglion (Prinz, Bucher & Marder,
-// Nat Neurosci 2004, doi:10.1038/nn1352). Three model neurons — the AB/PD
-// pacemaker kernel and the LP and PY followers — wired by the canonical
-// 7 graded chemical synapses produce the triphasic rhythm AB/PD → LP → PY.
+// Nat Neurosci 2004, doi:10.1038/nn1352).
 //
-// Conductance set per neuron (8 currents, mS/cm²):
-//   [g_Na, g_CaT, g_CaS, g_A, g_KCa, g_Kd, g_H, g_leak]
-// AB/PD uses the canonical Prinz pacemaker (PM_4). LP and PY were found by a
-// systematic parameter search (Prinz's own method, in miniature) that scored
-// thousands of conductance/synapse combinations for a sustained, correctly
-// ordered, cleanly bursting rhythm. The key ingredients (matching the biology):
-//   • LP carries a Ca-activated K current (g_KCa) → its burst self-terminates,
-//   • the AB/PD→follower synapses are BOTH glutamatergic and cholinergic — the
-//     cholinergic component (E_syn = −80 mV, slow) gives the strong, sustained
-//     hyperpolarisation that shapes a clean post-inhibitory rebound burst,
-//   • a small tonic drive (I_stim) on the followers stands in for neuromodulation.
-// Result: each cell fires exactly one tight burst per cycle, in order. All 8
-// conductances and all synapses stay editable to explore the circuit.
-const ABPD = { gNa: 300, gCaT: 2.5,  gCaS: 2, gA: 10,    gKCa: 5,    gKd: 125, gH: 0.01,  gLeak: 0,    I_stim: 0,      stimOnset: 0, stimDuration: 0 }
-const LP   = { gNa: 100, gCaT: 0,    gCaS: 4, gA: 7.48,  gKCa: 5.61, gKd: 25,  gH: 0.094, gLeak: 0.03, I_stim: 0.0017, stimOnset: 0, stimDuration: 0 }
-const PY   = { gNa: 500, gCaT: 6.46, gCaS: 4, gA: 31.25, gKCa: 3.33, gKd: 125, gH: 0.095, gLeak: 0.03, I_stim: 0.0022, stimOnset: 0, stimDuration: 0 }
+// This preset uses a VALIDATED parameter set taken directly from the reference
+// implementation mackelab/pyloric (the 31-value circuit from its
+// `test_valid_simulation`, which the repo certifies as a "pyloric_like" rhythm).
+// Running these exact values through our engine reproduces the reference output
+// (short AB/PD bursts, a long LP burst, a short PY burst, period ≈ 1 s) — a
+// direct cross-check that our STG/synapse equations match the reference.
+//
+// Membrane conductances (8 currents, mS/cm²): [g_Na,g_CaT,g_CaS,g_A,g_KCa,g_Kd,g_H,g_leak]
+// noise = 0.001 µA Gaussian current per step, matching the reference's noise_std.
+const ABPD = { gNa: 286.921725, gCaT: 0.0975099899, gCaS: 5.53758392, gA: 21.755384,  gKCa: 12.1938578, gKd: 123.777092, gH: 0.00964585042, gLeak: 0.00516584517, I_stim: 0, noise: 0.001, stimOnset: 0, stimDuration: 0 }
+const LP   = { gNa: 167.802913, gCaT: 0.994858342,  gCaS: 7.71058188, gA: 19.2827439,  gKCa: 7.30915903, gKd: 43.390796,  gH: 0.050381617,   gLeak: 0.021214225,  I_stim: 0, noise: 0.001, stimOnset: 0, stimDuration: 0 }
+const PY   = { gNa: 477.249899, gCaT: 5.10924385,   gCaS: 0.713955321, gA: 39.6705037, gKCa: 4.89271588, gKd: 59.2566636, gH: 0.0551743568,  gLeak: 0.0121729756, I_stim: 0, noise: 0.001, stimOnset: 0, stimDuration: 0 }
 
-// Graded chemical synapse (ḡ_syn in mS).
-const syn = (id: string, src: string, tgt: string, c: number, synClass: 'glut' | 'chol') => ({
+// Synaptic strengths are stored in the reference as ln(ḡ_syn); ḡ_syn = exp(value), in mS.
+// Glutamatergic: E_syn=−70 mV; cholinergic (the PD components): E_syn=−80 mV.
+const syn = (id: string, src: string, tgt: string, lnG: number, synClass: 'glut' | 'chol') => ({
   id, sourceId: src, targetId: tgt, targetCompartment: 'soma' as const,
-  type: 'inhibitory' as const, conductance: c, deliveryTime: 0,
+  type: 'inhibitory' as const, conductance: Math.exp(lnG), deliveryTime: 0,
   mechanism: 'graded' as const, synClass,
 })
 
@@ -36,18 +31,19 @@ export const pyloricPreset: Network = {
     { id: 'lp',   position: { x: 280, y: 330 }, label: 'LP',    model: 'stg', params: { ...LP } },
     { id: 'py',   position: { x: 520, y: 330 }, label: 'PY',    model: 'stg', params: { ...PY } },
   ],
-  // Canonical Prinz connectivity: AB/PD → LP and AB/PD → PY each via a glutamatergic
-  // AND a cholinergic synapse; LP → PY; PY → LP; and a weak LP → AB/PD feedback.
+  // Canonical 7-synapse connectivity (the AB and PD components of the pacemaker
+  // synapse onto each follower glutamatergically AND cholinergically).
   synapses: [
-    syn('s_abpd_lp_g', 'abpd', 'lp', 3.97e-4, 'glut'),
-    syn('s_abpd_lp_c', 'abpd', 'lp', 5.9e-5,  'chol'),
-    syn('s_abpd_py_g', 'abpd', 'py', 2.37e-4, 'glut'),
-    syn('s_abpd_py_c', 'abpd', 'py', 1.39e-4, 'chol'),
-    syn('s_lp_py',     'lp',   'py', 4.64e-4, 'glut'),  // LP delays/terminates → PY fires last
-    syn('s_py_lp',     'py',   'lp', 3.66e-4, 'glut'),  // PY feeds back onto LP
-    syn('s_lp_abpd',   'lp',   'abpd', 5.6e-5, 'glut'), // weak LP → pacemaker feedback
+    syn('s_ab_lp', 'abpd', 'lp',  -10.8318439, 'glut'),  // AB → LP
+    syn('s_pd_lp', 'abpd', 'lp',  -10.5837408, 'chol'),  // PD → LP
+    syn('s_ab_py', 'abpd', 'py',  -13.891689,  'glut'),  // AB → PY
+    syn('s_pd_py', 'abpd', 'py',  -9.07825715, 'chol'),  // PD → PY
+    syn('s_lp_pd', 'lp',   'abpd', -8.90034224, 'glut'), // LP → AB/PD
+    syn('s_lp_py', 'lp',   'py',  -15.7819342, 'glut'),  // LP → PY
+    syn('s_py_lp', 'py',   'lp',  -7.23973359, 'glut'),  // PY → LP
   ],
-  simulation: { length: 6000, step: 0.1 },
+  // The reference integrates at dt = 0.025 ms; matching it keeps the rhythm faithful.
+  simulation: { length: 5000, step: 0.025 },
   // Measure all three somata so the triphasic sequence is visible immediately.
   electrodes: [
     { neuronId: 'abpd', compartment: 'soma' },
