@@ -1,4 +1,4 @@
-.panel { width: 180px; background: #161b22; border-right: 1px solid #30363d; display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+.panel { flex: 0 0 22%; min-width: 220px; max-width: 330px; background: #161b22; border-right: 1px solid #30363d; display: flex; flex-direction: column; overflow-y: auto; }
 .section { padding: 10px; border-bottom: 1px solid #30363d; }
 .label { color: #8b949e; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
 .modeButtons { display: flex; flex-direction: column; gap: 4px; }

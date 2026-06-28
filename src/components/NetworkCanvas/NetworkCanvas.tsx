@@ -30,13 +30,15 @@ export function NetworkCanvas() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)   // canvas zoom (content scaled around the origin)
 
   const placeTool = editorTool === 'spiking' || editorTool === 'nonspiking' || editorTool === 'afferent'
   const placing = mode === 'editor' && placeTool
 
   const svgPoint = (e: React.MouseEvent) => {
     const rect = svgRef.current!.getBoundingClientRect()
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    // Undo the zoom so placed/dragged positions map back to content coordinates.
+    return { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom }
   }
 
   // Click on empty canvas: place a neuron of the active tool, else cancel any pending
@@ -90,11 +92,13 @@ export function NetworkCanvas() {
   }
 
   return (
+    <div className={styles.wrap}>
     <svg ref={svgRef} className={styles.canvas}
          tabIndex={0} onKeyDown={handleKeyDown}
          onClick={handleBackgroundClick}
          onMouseMove={e => { if (dragging) moveNeuron(dragging, svgPoint(e)) }}
          onMouseUp={() => setDragging(null)}>
+    <g transform={`scale(${zoom})`}>
 
       {connectingFrom && (
         <text x={10} y={20} fill="#d29922" fontSize={12}>
@@ -157,6 +161,13 @@ export function NetworkCanvas() {
           selected={s.id === selectedId}
           onClick={() => { setSelected(s.id) }} />
       ))}
+    </g>
     </svg>
+      <div className={styles.zoom}>
+        <button title="Verkleinern" onClick={() => setZoom(z => Math.max(0.4, Math.round((z - 0.1) * 10) / 10))}>−</button>
+        <button title="100 %" onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</button>
+        <button title="Vergrößern" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>+</button>
+      </div>
+    </div>
   )
 }

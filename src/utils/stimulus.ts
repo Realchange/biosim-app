@@ -12,7 +12,10 @@ export function stimulusCurrent(p: StimParams, t: number): number {
   const onset = p.stimOnset ?? 0
   if (t < onset) return 0
   const I = p.I_stim
-  const tRel = t - onset
+  // A positive stimPeriod repeats the whole stimulus every period (so the live mode
+  // keeps re-triggering a one-shot pulse/ramp); 0 = one-shot.
+  const period = p.stimPeriod ?? 0
+  const tRel = period > 0 ? (t - onset) % period : t - onset
 
   if ((p.stimType ?? 'pulse') !== 'ramp') {
     const dur = p.stimDuration ?? 0
@@ -46,7 +49,8 @@ export function stimulusPoints(
   tEnd: number,
 ): [number, number][] {
   const isRamp = (params.stimType ?? 'pulse') === 'ramp'
-  if (!isRamp) {
+  const periodic = (params.stimPeriod ?? 0) > 0
+  if (!isRamp && !periodic) {
     // Rectangular pulse: corner points keep the edges crisp.
     const amp = params.I_stim
     const onset = params.stimOnset ?? 0
@@ -59,7 +63,7 @@ export function stimulusPoints(
     pts.push([tEnd, level(tEnd)])
     return pts
   }
-  // Ramp: sample finely so the rise, plateau and pulses render smoothly.
+  // Ramp or a repeating pulse: sample finely so the (wrapped) waveform renders right.
   const N = 240
   const pts: [number, number][] = []
   for (let i = 0; i <= N; i++) {

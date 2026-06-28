@@ -25,6 +25,36 @@ export interface Citation {
 }
 export interface PresetInfo { summary: string; tips: PresetTip[]; comparison?: PresetComparison; citations?: Citation[] }
 
+// Shared citations for the xolotl-derived examples: the simulator the authors ask
+// to cite, plus the underlying Prinz channel model.
+const XOLOTL_CITATIONS: Citation[] = [
+  {
+    role: 'Simulator-Vorlage (xolotl)',
+    requested: true,
+    text: 'Gorur-Shandilya S, Hoyland A, Marder E (2018). Xolotl: An Intuitive and Approachable Neuron and Network Simulator for Research and Teaching. Frontiers in Neuroinformatics 12:87. Code: github.com/sg-s/xolotl (GPL-3.0 — hier nachimplementiert, nicht übernommen).',
+    doi: '10.3389/fninf.2018.00087',
+    bibtex:
+      '@article{gorurshandilya2018xolotl,\n' +
+      '  title={Xolotl: An Intuitive and Approachable Neuron and Network Simulator for Research and Teaching},\n' +
+      '  author={Gorur-Shandilya, Srinivas and Hoyland, Alec and Marder, Eve},\n' +
+      '  journal={Frontiers in Neuroinformatics},\n' +
+      '  volume={12}, pages={87}, year={2018},\n' +
+      '  doi={10.3389/fninf.2018.00087}\n}',
+  },
+  {
+    role: 'Kanalmodell',
+    text: 'Prinz AA, Bucher D, Marder E (2004). Similar network activity from disparate circuit parameters. Nature Neuroscience 7(12):1345–1352.',
+    doi: '10.1038/nn1352',
+    bibtex:
+      '@article{prinz2004similar,\n' +
+      '  title={Similar network activity from disparate circuit parameters},\n' +
+      '  author={Prinz, Astrid A and Bucher, Dirk and Marder, Eve},\n' +
+      '  journal={Nature Neuroscience},\n' +
+      '  volume={7}, number={12}, pages={1345--1352}, year={2004},\n' +
+      '  publisher={Nature Publishing Group}\n}',
+  },
+]
+
 export const PRESET_INFO: Record<string, PresetInfo> = {
   'Aktionspotential': {
     summary:
@@ -119,6 +149,7 @@ export const PRESET_INFO: Record<string, PresetInfo> = {
       { param: 'ḡ Synapse AB/PD→LP/PY', effect: 'Stärker → Folger werden tiefer/länger stillgelegt. Zu stark → ein Folger verstummt ganz; zu schwach → er feuert tonisch durch.' },
       { param: 'ḡ Synapse LP→PY / PY→LP', effect: 'LP→PY schiebt PY hinter LP; PY→LP-Rückkopplung beendet den LP-Burst mit. Zusammen erzeugen sie die klare Phasentrennung.' },
       { param: 'Rauschen σ', effect: 'Gauß-Rauschstrom pro Zeitschritt (Referenz: 0,001 µA). Erzeugt das Zittern der Baselines/das passive Verhalten. Auf 0 → glatte, idealisierte Spuren.' },
+      { param: '🎚 Live-Modus', effect: 'Mit „Live" (statt Start) läuft die Simulation endlos und du ziehst die Leitwerte per Schieber, während der Rhythmus läuft — z. B. g_CaS senken und zusehen, wie der Dreitakt kippt. „↺ Preset" stellt die Originalwerte wieder her.' },
       { param: 'Dauer (unten)', effect: 'Der Rhythmus läuft mit Periode ≈ 1 s. 4000–5000 ms wählen, um mehrere Zyklen zu sehen.' },
     ],
     comparison: {
@@ -171,5 +202,44 @@ export const PRESET_INFO: Record<string, PresetInfo> = {
           '  publisher={National Acad Sciences}\n}',
       },
     ],
+  },
+  'Xolotl: Burst-Neuron': {
+    summary:
+      'Ein einzelnes konduktanzbasiertes Neuron, das von allein bursted — die Signatur-Demo des ' +
+      'Simulators „xolotl" (Gorur-Shandilya, Hoyland & Marder 2018). Es nutzt denselben STG-Kanalsatz ' +
+      'wie das pylorische Modell (8 Ströme + Ca²⁺), hier mit den Leitwerten aus xolotls BurstingNeuron-' +
+      'Beispiel. Das Zusammenspiel von Ca-Einstrom (CaS/CaT), Ca-aktiviertem K-Strom (KCa) und dem ' +
+      'langsamen H-Strom erzeugt den Wechsel aus Burst und Stille. Hinweis: das Modell ist in unserer ' +
+      'Engine nachimplementiert (xolotls Code ist GPL-3.0 und wird nicht verwendet); die publizierten ' +
+      'Prinz-Gleichungen sind frei. Alle 8 Leitfähigkeiten sind editierbar — probiere, wie sich der Burst ändert.',
+    tips: [
+      { param: 'g_CaS / g_CaT', effect: 'Ca-Einstrom treibt die langsame Depolarisation (den Plateau-Aufbau). Senken → kürzere/keine Bursts.' },
+      { param: 'g_KCa', effect: 'Ca-aktivierter K-Strom beendet den Burst. Größer → kürzere Bursts; auf 0 → tonisches Dauerfeuern.' },
+      { param: 'g_A', effect: 'A-Strom verzögert/verlangsamt; beeinflusst Spike-Rate und Burst-Form.' },
+      { param: 'g_H', effect: 'H-Strom treibt die Erholung zwischen den Bursts → setzt mit die Burst-Frequenz.' },
+      { param: 'I_stim', effect: 'Zusätzlicher Gleichstrom verschiebt das Neuron Richtung Dauerfeuern oder Stille.' },
+      { param: '🎚 Live-Modus', effect: 'Genau wie in xolotl: mit „Live" läuft die Simulation endlos und du veränderst die Leitwerte per Schieber, während das Neuron bursted — z. B. g_KCa hochziehen → kürzere Bursts.' },
+      { param: 'Dauer (unten)', effect: 'Periode ≈ 0,7 s. 3000–4000 ms zeigen mehrere Bursts.' },
+    ],
+    citations: XOLOTL_CITATIONS,
+  },
+  'Xolotl: Half-Center-Oszillator': {
+    summary:
+      'Zwei identische burstende Neurone hemmen sich gegenseitig — ein Half-Center-Oszillator, das ' +
+      'Grundmotiv vieler zentraler Mustergeneratoren (Schwimmen, Atmen, Kauen). Die reziproke Hemmung ' +
+      'zwingt die beiden Zellen in die Gegenphase: feuert die eine, schweigt die andere, und umgekehrt. ' +
+      'Inspiriert vom HCO-Beispiel des Simulators xolotl (Gorur-Shandilya, Hoyland & Marder 2018). ' +
+      'Umsetzungshinweis: xolotls HCO nutzt einen Escape/Release-Mechanismus (nicht-burstende Zellen + ' +
+      'sehr langsamer H-Strom); da unser H-Strom eine feste Zeitkonstante hat, verwenden wir zwei ' +
+      'intrinsische Burster mit reziproker Hemmung — dasselbe Half-Center-Phänomen (Gegenphasen-Bursting). ' +
+      'Ein wenig Membranrauschen bricht die Anfangssymmetrie.',
+    tips: [
+      { param: 'ḡ Synapse (reziprok)', effect: 'Stärke der gegenseitigen Hemmung. Zu schwach → die Zellen synchronisieren; stärker → klarere Gegenphase. Beide Synapsen gleich halten.' },
+      { param: 'g_CaS / g_KCa (Zellen)', effect: 'Bestimmen das intrinsische Bursting jeder Zelle — und damit Periode und Burst-Dauer des Half-Centers.' },
+      { param: 'Rauschen σ', effect: 'Bricht die Symmetrie der zwei identischen Zellen, damit eine Seite zuerst loslegt. Auf 0 → Start kann unbestimmt sein.' },
+      { param: '🎚 Live-Modus', effect: 'Mit „Live" läuft der Oszillator endlos; ziehe die reziproke Synapsenstärke oder die Leitwerte und sieh, wie sich Tempo und Alternation ändern.' },
+      { param: 'Dauer (unten)', effect: 'Periode ≈ 1,2 s. 5000–6000 ms wählen, um die Alternation mehrfach zu sehen. Elektroden auf beide Somata setzen.' },
+    ],
+    citations: XOLOTL_CITATIONS,
   },
 }

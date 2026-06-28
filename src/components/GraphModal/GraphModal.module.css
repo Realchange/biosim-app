@@ -1,13 +1,28 @@
 .dialog {
   position: fixed; inset: 0; margin: auto;
-  width: min(860px, 96vw);
+  width: min(1120px, 96vw);
   max-height: 92vh;
   background: #161b22;
   border: 1px solid #30363d;
   border-radius: 8px;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
   color: #c9d1d9;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Body: graphs (left, scroll/zoom) + parameter sidebar (right, edit live). */
+.body { display: flex; flex: 1; min-height: 0; }
+.graphs { flex: 1; min-width: 0; overflow-y: auto; }
+.paramSidebar {
+  flex: 0 0 290px; overflow-y: auto;
+  border-left: 1px solid #21262d; padding: 0 12px 14px;
+}
+.sidebarTitle {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: #768390; font-weight: 700; padding: 10px 0 8px;
+  position: sticky; top: 0; background: #161b22;
 }
 
 .dialog::backdrop {

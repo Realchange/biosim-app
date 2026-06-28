@@ -38,10 +38,24 @@ export function SynapseParamsPanel({ synapse }: { synapse: Synapse }) {
             </select>
           </label>
           <label style={{ display: 'block' }}>
-            {/* ḡ_syn is stored in mS; shown in nS (values span ~0.1–700 nS). */}
+            {/* ḡ_syn is stored in mS; shown in nS (values span ~0.1–1000 nS, so the
+                slider is logarithmic). The numeric field gives exact entry. */}
             <span style={labelStyle}>Synaptische Leitfähigkeit ḡ (nS)</span>
-            <NumberField value={synapse.conductance * 1e6} step={1} min={0}
-              onChange={v => updateSynapse(synapse.id, { conductance: v / 1e6 })} />
+            {(() => {
+              const nS = synapse.conductance * 1e6
+              const lo = -1, hi = 3.3   // 0.1 nS … ~2000 nS
+              const pos = nS > 0 ? Math.max(lo, Math.min(hi, Math.log10(nS))) : lo
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input type="range" min={lo} max={hi} step={0.02} value={pos} style={{ flex: 1, minWidth: 0 }}
+                    onChange={e => updateSynapse(synapse.id, { conductance: Math.pow(10, parseFloat(e.target.value)) / 1e6 })} />
+                  <div style={{ width: 66, flex: 'none' }}>
+                    <NumberField value={nS} step={1} min={0}
+                      onChange={v => updateSynapse(synapse.id, { conductance: v / 1e6 })} />
+                  </div>
+                </div>
+              )
+            })()}
           </label>
         </>
       ) : (

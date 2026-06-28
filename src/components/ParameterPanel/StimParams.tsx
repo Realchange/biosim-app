@@ -37,6 +37,7 @@ export function StimParams({ neuronId, params, iStimMax }: Props) {
       </label>
       {slider('Reizbeginn (ms)', 'stimOnset', 0, 200, 0.5)}
       {slider(type === 'ramp' ? 'Plateaudauer (ms, 0=Dauer)' : 'Reizdauer (ms, 0=Dauer)', 'stimDuration', 0, 200, 1)}
+      {slider('Wiederholung Periode (ms, 0=einmalig)', 'stimPeriod', 0, 500, 1)}
       {type === 'ramp' && (
         <>
           {slider('Rampenzeit (ms)', 'rampTime', 1, 200, 1, 50)}

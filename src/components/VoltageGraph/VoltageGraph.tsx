@@ -7,7 +7,7 @@ import { FIXED_V_RANGE } from '../../utils/scale'
 import { stimulusCurrent } from '../../utils/stimulus'
 import styles from './VoltageGraph.module.css'
 
-const W = 280, PH = 120
+const W = 360, PH = 120
 const MARGIN = { top: 8, right: 10, bottom: 22, left: 34 }
 const WINDOW_MS = 100
 
@@ -15,8 +15,14 @@ interface Props {
   traces: VoltageTrace[]
   running: boolean
   currentT?: number
+  windowMs?: number               // width of the scrolling time window while running
+  onWindowMs?: (ms: number) => void   // if set, show a time-window selector
   onExpand?: (neuronId: string) => void
 }
+
+// Selectable widths for the scrolling time window (ms).
+const WINDOW_OPTIONS = [50, 100, 200, 500, 1000, 2000, 5000]
+const fmtWin = (ms: number) => (ms >= 1000 ? `${ms / 1000} s` : `${ms} ms`)
 
 type StimSpec = LIFParams | HHParams
 
@@ -128,7 +134,7 @@ function NeuronPanel({
   )
 }
 
-export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props) {
+export function VoltageGraph({ traces, running, currentT = 0, windowMs = WINDOW_MS, onWindowMs, onExpand }: Props) {
   const neurons = useNetworkStore(s => s.neurons)
 
   // Group traces by neuron — one stacked panel per measured neuron. The label uses
@@ -153,9 +159,12 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
     }))
   }, [traces, neurons])
 
-  // Shared time axis across all panels so they line up for comparison.
-  const tMax = running ? currentT : Math.max(WINDOW_MS, ...traces.flatMap(tr => tr.points.map(([t]) => t)), 0)
-  const tMin = running ? Math.max(0, tMax - WINDOW_MS) : 0
+  // Shared time axis across all panels so they line up for comparison. While running
+  // it's a scrolling window of CONSTANT width windowMs ending at the current time
+  // (tMin may be negative early on — the axis width never changes, so nothing is
+  // squashed). Stopped: show the full recorded range.
+  const tMax = running ? currentT : Math.max(windowMs, ...traces.flatMap(tr => tr.points.map(([t]) => t)), 0)
+  const tMin = running ? tMax - windowMs : 0
 
   // A stimulated neuron's stimulus params (for the faint current trace); else null.
   // Works for LIF, HH and graded — all carry I_stim.
@@ -167,9 +176,12 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
   }
 
   if (traces.length === 0) {
+    // Nothing to plot. At startup (no network yet) show nothing at all; once a
+    // network is present, hint how to add a measurement.
+    if (neurons.length === 0) return null
     return (
       <div className={styles.placeholder}>
-        <span>Elektrode platzieren</span>
+        <span>Klick auf ein Neuron setzt eine Messelektrode</span>
       </div>
     )
   }
@@ -178,6 +190,17 @@ export function VoltageGraph({ traces, running, currentT = 0, onExpand }: Props)
     <div className={styles.container}>
       <div className={styles.header}>
         <span className={styles.headerTitle}>Spannung (mV)</span>
+        {onWindowMs && (
+          <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#8b949e' }}>
+            Fenster
+            <select value={WINDOW_OPTIONS.includes(windowMs) ? windowMs : ''}
+              onChange={e => onWindowMs(Number(e.target.value))}
+              style={{ background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4, fontSize: 10 }}>
+              {!WINDOW_OPTIONS.includes(windowMs) && <option value="">{fmtWin(windowMs)}</option>}
+              {WINDOW_OPTIONS.map(ms => <option key={ms} value={ms}>{fmtWin(ms)}</option>)}
+            </select>
+          </label>
+        )}
       </div>
       <div className={styles.scroll}>
         {groups.map((g, i) => (

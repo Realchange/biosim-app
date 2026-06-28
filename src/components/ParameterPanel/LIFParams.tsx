@@ -1,6 +1,7 @@
 import type { LIFParams as LIFParamsType } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 import { StimParams } from './StimParams'
+import { SectionLabel } from '../common/SectionLabel'
 
 interface Props { neuronId: string; params: LIFParamsType; studentMode?: boolean }
 
@@ -18,7 +19,9 @@ export function LIFParamsPanel({ neuronId, params, studentMode }: Props) {
 
   return (
     <>
+      <SectionLabel first>Reiz</SectionLabel>
       <StimParams neuronId={neuronId} params={params} iStimMax={5} />
+      <SectionLabel>Neuron-Parameter</SectionLabel>
       {fields.map(f => (
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
           <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>

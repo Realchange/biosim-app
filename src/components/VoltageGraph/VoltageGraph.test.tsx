@@ -1,12 +1,21 @@
 import { render } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { VoltageGraph } from './VoltageGraph'
+import { useNetworkStore } from '../../store/networkStore'
 import type { VoltageTrace } from '../../store/networkStore'
 
 describe('VoltageGraph', () => {
-  it('renders placeholder when no traces', () => {
+  it('renders nothing when there are no traces and no network (startup)', () => {
+    useNetworkStore.setState({ neurons: [] })
+    const { container } = render(<VoltageGraph traces={[]} running={false} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('hints to add an electrode when a network exists but nothing is measured', () => {
+    useNetworkStore.setState({ neurons: [{ id: 'n1', position: { x: 0, y: 0 }, model: 'lif', params: {} as never }] })
     const { getByText } = render(<VoltageGraph traces={[]} running={false} />)
-    expect(getByText(/Elektrode/i)).toBeTruthy()
+    expect(getByText(/Messelektrode/i)).toBeTruthy()
+    useNetworkStore.setState({ neurons: [] })
   })
 
   it('renders a polyline per trace', () => {

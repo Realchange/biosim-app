@@ -14,6 +14,7 @@ export interface StimulusSpec {
   stimType?: 'pulse' | 'ramp'   // default 'pulse'
   stimOnset?: number            // ms, stimulus starts; default 0
   stimDuration?: number         // ms; pulse: on-time, ramp: plateau hold; 0 = sustained
+  stimPeriod?: number           // ms; >0 repeats the stimulus every period (0 = one-shot)
   rampTime?: number             // ms, ramp rise time; default 50
   dynamicGain?: number          // ramp velocity sensitivity (× I_stim during the rise); 0 = off
   accelGain?: number            // ramp acceleration sensitivity (brief pulses at onset & plateau); 0 = off

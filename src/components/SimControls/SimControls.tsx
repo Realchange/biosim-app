@@ -4,8 +4,8 @@ import type { WorkerOutMessage } from '../../simulation/worker'
 import styles from './SimControls.module.css'
 
 export function SimControls() {
-  const { sim, simulationParams,
-          setSim, setActivity, setSimulationParams, clearTraces, appendTracePoints, appendCurrentPoints, updateNeuron } = useNetworkStore()
+  const { sim, simulationParams, loadedNetwork,
+          setSim, setActivity, setSimulationParams, clearTraces, appendTracePoints, appendCurrentPoints, updateNeuron, restorePresetParams } = useNetworkStore()
   const workerRef = useRef<Worker | null>(null)
   // Refs so the worker's message handler always sees the latest loop flag / start fn.
   const loopRef = useRef(sim.loop)
@@ -15,20 +15,25 @@ export function SimControls() {
   // boundary remounts the tree) so an orphaned worker can't keep posting.
   useEffect(() => () => { workerRef.current?.terminate() }, [])
 
-  const start = () => {
+  const start = (live = false) => {
     if (workerRef.current) workerRef.current.terminate()
     clearTraces()
     setActivity({})
-    setSim({ running: true, paused: false, t: 0 })
+    setSim({ running: true, paused: false, t: 0, live })
 
     // Decimate stored trace points to a fixed budget so the traces stay small
     // regardless of step size / duration (otherwise a fine, long run stores
     // hundreds of thousands of points and the tab freezes). Spike detection below
     // still uses the full per-step arrays.
-    const { simulationParams: sp, neurons: currentNeurons, synapses: currentSynapses, sim: currentSim } = useNetworkStore.getState()
+    const { simulationParams: sp, neurons: currentNeurons, synapses: currentSynapses, sim: currentSim, graphWindowMs } = useNetworkStore.getState()
     const step = sp.step
     const TRACE_BUDGET = 4000
-    const stride = Math.max(1, Math.round((sp.length / step) / TRACE_BUDGET))
+    // Live mode runs forever → decimate so ~2500 points span the current time window
+    // (fine for a 100 ms action-potential view, coarse for a 5 s rhythm), with a
+    // rolling buffer. Fixed runs decimate to a total budget over their known length.
+    const stride = live
+      ? Math.max(1, Math.round((graphWindowMs / step) / 2500))
+      : Math.max(1, Math.round((sp.length / step) / TRACE_BUDGET))
 
     const worker = new Worker(new URL('../../simulation/worker.ts', import.meta.url), { type: 'module' })
     workerRef.current = worker
@@ -78,6 +83,10 @@ export function SimControls() {
             }
           }
         }
+        // Acknowledge after the browser has had a frame to render — this paces the
+        // worker to the UI's capacity so it can never flood the message queue (which
+        // is what froze the tab in the continuous live mode).
+        requestAnimationFrame(() => workerRef.current?.postMessage({ type: 'ack' }))
       }
       if (msg.type === 'done') {
         if (loopRef.current) {
@@ -88,10 +97,33 @@ export function SimControls() {
       }
     }
 
-    worker.postMessage({ type: 'start', neurons: currentNeurons, synapses: currentSynapses, simulation: sp, speed: currentSim.speed })
+    worker.postMessage({ type: 'start', neurons: currentNeurons, synapses: currentSynapses, simulation: sp, speed: currentSim.speed, live })
   }
   // Keep the ref pointing at the latest start() so the loop restart uses fresh state.
-  useEffect(() => { startRef.current = start })
+  useEffect(() => { startRef.current = () => start() })
+
+  // Live manipulation: when a parameter (not the auto-updated compartments) changes
+  // during a live run, push the new parameters to the running worker at once.
+  const paramSig = useNetworkStore(s =>
+    s.neurons.map(n => JSON.stringify(n.params)).join('|') + '##' +
+    s.synapses.map(sy => `${sy.conductance}:${sy.synClass ?? ''}:${sy.mechanism ?? ''}:${sy.type}:${sy.targetCompartment}:${sy.deliveryTime}`).join('|'),
+  )
+  useEffect(() => {
+    const st = useNetworkStore.getState()
+    if (st.sim.live && st.sim.running && workerRef.current) {
+      workerRef.current.postMessage({ type: 'update', neurons: st.neurons, synapses: st.synapses })
+    }
+  }, [paramSig])
+
+  // Loading a different example/file stops any running simulation (incl. live mode),
+  // so a switched preset never keeps an old worker (and old params) running.
+  useEffect(() => {
+    if (!workerRef.current) return
+    workerRef.current.terminate()
+    workerRef.current = null
+    setActivity({})
+    setSim({ running: false, paused: false, t: 0, live: false })
+  }, [loadedNetwork])   // eslint-disable-line react-hooks/exhaustive-deps
 
   const pause = () => {
     if (!workerRef.current) return
@@ -109,19 +141,29 @@ export function SimControls() {
     workerRef.current = null
     clearTraces()
     setActivity({})
-    setSim({ running: false, paused: false, t: 0 })
+    setSim({ running: false, paused: false, t: 0, live: false })
   }
 
   return (
     <div className={styles.controls}>
-      <button className={styles.primary} onClick={start} disabled={sim.running && !sim.paused}>
+      <button className={styles.primary} onClick={() => start(false)} disabled={sim.running && !sim.paused}>
         ▶ Start
+      </button>
+      <button className={sim.live ? styles.loopOn : ''}
+        onClick={() => (sim.live ? reset() : start(true))}
+        disabled={sim.running && !sim.live}
+        title="Live-Modus: läuft endlos, Parameter während der Simulation per Regler verändern. Nochmal klicken zum Stoppen.">
+        {sim.live ? '■ Live stoppen' : '🎚 Live'}
       </button>
       <button onClick={pause} disabled={!sim.running}>
         {sim.paused ? '▶ Weiter' : '⏸ Pause'}
       </button>
       <button onClick={reset}>
         ⏮ Reset
+      </button>
+      <button onClick={restorePresetParams} disabled={!loadedNetwork}
+        title="Parameter auf die Werte des geladenen Beispiels zurücksetzen">
+        ↺ Preset
       </button>
       <button
         className={sim.loop ? styles.loopOn : ''}

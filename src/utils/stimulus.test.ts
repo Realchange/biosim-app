@@ -9,6 +9,15 @@ describe('stimulusCurrent', () => {
     expect(stimulusCurrent(p, 9)).toBe(0)
   })
 
+  it('stimPeriod repeats the pulse every period (for the live mode)', () => {
+    const p = { I_stim: 10, stimOnset: 5, stimDuration: 1, stimPeriod: 25 } as const
+    expect(stimulusCurrent(p, 5.5)).toBe(10)    // first pulse
+    expect(stimulusCurrent(p, 10)).toBe(0)      // between pulses
+    expect(stimulusCurrent(p, 30.5)).toBe(10)   // repeated at onset + period
+    expect(stimulusCurrent(p, 55.5)).toBe(10)   // and again
+    expect(stimulusCurrent(p, 40)).toBe(0)
+  })
+
   it('ramp: rises linearly over rampTime, then plateaus', () => {
     const p = { I_stim: 10, stimOnset: 0, stimType: 'ramp', rampTime: 100, stimDuration: 0 } as const
     expect(stimulusCurrent(p, 0)).toBeCloseTo(0, 1)

@@ -2,6 +2,18 @@
 .header { display: flex; align-items: center; gap: 12px; padding: 6px 16px; background: #161b22; border-bottom: 1px solid #30363d; flex-shrink: 0; }
 .logo { font-weight: bold; color: #c9d1d9; }
 .version { color: #8b949e; font-size: 11px; font-variant-numeric: tabular-nums; margin-left: -6px; }
+/* Editable simulation title (Google-Docs style: looks like text, editable on click) */
+.nameField {
+  flex: 1; min-width: 80px; max-width: 420px;
+  background: transparent; border: 1px solid transparent; border-radius: 4px;
+  color: #c9d1d9; font-size: 13px; font-weight: 500;
+  padding: 4px 8px; margin: 0 6px;
+}
+.nameField:hover { border-color: #30363d; }
+.nameField:focus { outline: none; border-color: #1f6feb; background: #0d1117; }
+.nameField::placeholder { color: #6e7681; font-weight: 400; }
 .headerBtn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .main { display: flex; flex: 1; overflow: hidden; }
-.canvasArea { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+/* Narrower centre (canvas) so the parameter panel (left) and the graphs (right)
+   get more room; min-width:0 lets it actually shrink below content size. */
+.canvasArea { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; overflow: hidden; }

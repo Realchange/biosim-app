@@ -22,17 +22,21 @@ interface SimState {
   t: number   // current simulation time ms
   loop: boolean   // restart automatically when the run finishes
   speed: number   // ms of real delay between snapshots (higher = slower playback)
+  live: boolean   // continuous "manipulate" mode: runs until stopped, params editable live
 }
 
 interface NetworkState {
   neurons: Neuron[]
   synapses: Synapse[]
   simulationParams: SimulationParams
+  networkName: string
   mode: AppMode
   selectedId: string | null
   electrodes: Electrode[]
   traces: VoltageTrace[]
   currentTraces: CurrentTrace[]
+  loadedNetwork: Network | null   // the last loaded preset/file (for "reset to preset")
+  graphWindowMs: number           // width of the scrolling graph window (also sets live resolution)
   sim: SimState
   activity: Record<string, number>   // per-neuron smoothed firing activity (0..1) for the glow
   editorTool: EditorTool             // active editor placement tool
@@ -48,6 +52,9 @@ interface NetworkState {
   updateSynapse: (id: string, patch: Partial<Synapse>) => void
   setSelected: (id: string | null) => void
   setMode: (mode: AppMode) => void
+  setNetworkName: (name: string) => void
+  setGraphWindowMs: (ms: number) => void
+  restorePresetParams: () => void   // restore neuron/synapse parameters of the loaded preset
   addElectrode: (neuronId: string, compartment: Compartment) => void
   removeElectrode: (neuronId: string, compartment: Compartment) => void
   appendTracePoints: (neuronId: string, compartment: Compartment, pts: [number, number][]) => void
@@ -63,14 +70,24 @@ interface NetworkState {
   getInitialState: () => NetworkState
 }
 
-const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'sim' | 'activity' | 'editorTool' | 'editorModel'> = {
+const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'networkName' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'loadedNetwork' | 'graphWindowMs' | 'sim' | 'activity' | 'editorTool' | 'editorModel'> = {
   neurons: [], synapses: [],
   simulationParams: { length: 100, step: 0.1 },
+  networkName: 'Neue Simulation',
   mode: 'presentation',
   selectedId: null, electrodes: [], traces: [], currentTraces: [],
-  sim: { running: false, paused: false, t: 0, loop: false, speed: 16 },
+  loadedNetwork: null,
+  graphWindowMs: 1000,
+  sim: { running: false, paused: false, t: 0, loop: false, speed: 16, live: false },
   activity: {},
   editorTool: 'select', editorModel: 'hodgkin-huxley',
+}
+
+// Rolling cap on stored trace points (keeps the last N) so a continuous live run
+// can't grow unbounded. Generous enough that fixed-length runs are unaffected.
+const MAX_TRACE_POINTS = 12000
+function capPoints(points: [number, number][]): [number, number][] {
+  return points.length > MAX_TRACE_POINTS ? points.slice(points.length - MAX_TRACE_POINTS) : points
 }
 
 export const useNetworkStore = create<NetworkState>()((set, get) => ({
@@ -131,6 +148,18 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
   })),
 
   setSelected: (id) => set({ selectedId: id }),
+  setNetworkName: (name) => set({ networkName: name }),
+  setGraphWindowMs: (ms) => set({ graphWindowMs: ms }),
+  // Restore the parameters of the loaded preset (keeps electrodes/traces/run going)
+  // — the "back to working values" button for live manipulation.
+  restorePresetParams: () => set(s => {
+    if (!s.loadedNetwork) return s
+    const origParams = new Map(s.loadedNetwork.neurons.map(n => [n.id, n.params]))
+    return {
+      neurons: s.neurons.map(n => origParams.has(n.id) ? { ...n, params: { ...origParams.get(n.id)! } } : n),
+      synapses: s.loadedNetwork.synapses.map(sy => ({ ...sy })),
+    }
+  }),
   // Leaving the editor resets the placement tool to 'select'.
   setMode: (mode) => set(s => ({ mode, editorTool: mode === 'editor' ? s.editorTool : 'select' })),
 
@@ -167,18 +196,19 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
 
   // Append a BATCH of points in one update. Appending point-by-point copied the
   // whole (growing) array per point — O(n²) over a run, which froze the tab on
-  // long simulations. One concat per batch keeps it manageable.
+  // long simulations. One concat per batch keeps it manageable. A hard cap keeps
+  // the array bounded as a rolling buffer (essential for the continuous live mode).
   appendTracePoints: (neuronId, compartment, pts) => set(s => (pts.length === 0 ? s : {
     traces: s.traces.map(tr =>
       tr.neuronId === neuronId && tr.compartment === compartment
-        ? { ...tr, points: tr.points.concat(pts) }
+        ? { ...tr, points: capPoints(tr.points.concat(pts)) }
         : tr
     ),
   })),
 
   appendCurrentPoints: (neuronId, pts) => set(s => (pts.length === 0 ? s : {
     currentTraces: s.currentTraces.map(ct =>
-      ct.neuronId === neuronId ? { ...ct, points: ct.points.concat(pts) } : ct
+      ct.neuronId === neuronId ? { ...ct, points: capPoints(ct.points.concat(pts)) } : ct
     ),
   })),
 
@@ -207,6 +237,8 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
       neurons: network.neurons,
       synapses: network.synapses,
       simulationParams: network.simulation,
+      networkName: network.name || 'Neue Simulation',
+      loadedNetwork: network,
       selectedId: network.neurons.length > 0 ? network.neurons[0].id : null,
       electrodes,
       traces: electrodes.map(e => ({ neuronId: e.neuronId, compartment: e.compartment, points: [] })),

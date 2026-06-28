@@ -12,8 +12,10 @@ export const actionPotentialPreset: Network = {
     params: {
       I_stim: 12,
       // Brief 1 ms current pulse at t = 5 ms → exactly one clean action potential.
-      // Set stimDuration to 0 (or increase it) to drive a repetitive spike train instead.
-      stimOnset: 5, stimDuration: 1,
+      // stimPeriod = 25 ms repeats it (a 40 Hz train): in the 30 ms run only the first
+      // pulse fires, but the endless Live mode re-triggers it so parameter changes are
+      // observable. Set stimDuration to 0 for a sustained drive instead.
+      stimOnset: 5, stimDuration: 1, stimPeriod: 25,
       E_Na: 50, E_K: -77, E_Ca: 120, E_leak: -54.387,
       g_Na: 120, g_K: 36, g_Ca: 0.3, g_leak: 0.3,
       C_m: 1.0, g_core: 0.1,

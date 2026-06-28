@@ -1,6 +1,7 @@
 import type { HHParams as HHParamsType, Compartment } from '../../types'
 import { useNetworkStore } from '../../store/networkStore'
 import { StimParams } from './StimParams'
+import { SectionLabel } from '../common/SectionLabel'
 
 interface Props { neuronId: string; params: HHParamsType; studentMode?: boolean }
 
@@ -28,6 +29,7 @@ export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
 
   return (
     <>
+      <SectionLabel first>Reiz</SectionLabel>
       <label style={{ display: 'block', marginBottom: 8 }}>
         <span style={{ color: '#8b949e', fontSize: 10 }}>Reizort</span>
         <select
@@ -38,6 +40,7 @@ export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
         </select>
       </label>
       <StimParams neuronId={neuronId} params={params} iStimMax={100} />
+      <SectionLabel>Neuron-Parameter</SectionLabel>
       {fields.map(f => (
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
           <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>
