@@ -32,3 +32,11 @@ dist-ssr
 results/*.db
 results/*.db-journal
 results/*.db-wal
+
+# Unpublished scientific outputs — kept LOCAL only, never committed (pre-publication).
+# The deterministic code that produces them stays public; the results themselves do not.
+core/reports/
+core/results/
+reports/
+results/
+core/docs/figures/

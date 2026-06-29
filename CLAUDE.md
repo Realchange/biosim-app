@@ -12,6 +12,75 @@ quantitative result**. No reported number is hand-entered.
 All code, comments, documents, and reports are in **English**. (Conversations with
 the author may be in German.)
 
+## Project status & history
+
+The project grew along scientific questions, not a fixed external roadmap; the
+"M" numbers below are just the order in which questions were tackled. Current
+state: monorepo split complete, public on GitHub, core test suite green
+(100/100 at the time of writing), frontend builds and runs.
+
+Milestones so far:
+
+- **M1–M4 — engine + geometry.** The Hypothesis Engine core: typed contracts,
+  parameter↔vector mapping in log-conductance space, a deterministic engine
+  adapter, rhythm metrics, manipulation primitives (scaleAll, ratio,
+  randomDirections, sweep), a sequential runner, a Node-only SQLite store, the
+  hypothesis catalog/registry, and the analysis modules — Fisher Information
+  (local curvature), observables, stiffness-by-group.
+- **M5 — LLM layer.** A transformer that proposes experiment plans and an
+  interpreter that writes verdicts, behind a strict schema validator and a human
+  approval gate. Deterministic code still computes every number; the LLM only
+  proposes specs and writes prose.
+- **M6 — follow-up loop.** `--prior` lets a verdict from one round seed a sharper
+  next round, designed to falsify the prior refined claim.
+- **M7 — knockout + period metric.** A knockout primitive (set a conductance to
+  effective zero) and a period-sensitive distance (relative change of cycle
+  period on a log scale), the dual of the phase-shape metric.
+- **Metric robustness revision.** Motivated by the engine's own results: a
+  collapsed/undefined rhythm is now tracked as a separate `collapsed` category
+  (not a large distance value), and `toleratedRadius` is interpolated between
+  samples (resolution-robust) with explicit `thresholdCrossed`/`collapsedFraction`
+  flags. Grounded in how the inference literature (Gonçalves et al. 2020) treats
+  invalid simulations.
+- **M8 — period-sensitivity gradient.** Computes ∂log10(T)/∂log10(g) at the
+  reference rhythm and reports how distributed period control is (participation
+  ratio, share per conductance). Result: period control is **distributed**
+  (PR ≈ 9/31), with the strongest single axis carrying ~10%, and the strongest
+  levers are LP/PY follower-neuron conductances rather than the pacemaker.
+
+Key scientific findings (all via the autonomous loop, all falsification-driven):
+
+- **Degeneracy/Fisher Information.** The parameter sensitivity spectrum spans many
+  decades (very sloppy). Intrinsic conductances are stiffer than synaptic on
+  average; one of the two AB/PD→PY synapses is globally redundant.
+- **H5 — "every synapse is dispensable" → refuted** over two rounds, with a
+  directional asymmetry: some synapses are fragile to reduction but tolerant of
+  increase. Three independent methods (sweeps, knockout, FIM) agree.
+- **H6 — "a single conductance dominates cycle period" → refuted** over three
+  rounds. The loop corrected itself twice: first a wide-sweep saturation artifact,
+  then a conflation of rhythm collapse with period control. Final position: gCaT
+  is the strongest single *smooth* lever, but period is set by a distributed,
+  multi-conductance mechanism; the high-sensitivity conductances (gCaS, gKd) are
+  *necessary for the rhythm*, which is a different property from controlling its
+  period. M8 then quantified the distribution directly.
+
+Reports for each of these are in `core/reports/` (`.docx`); the stored plans,
+runs, and interpreter verdicts are in `core/results/`.
+
+Restructuring (most recent work): the project was split from a single Vite app
+into the `core`/`app` npm workspaces described below. The split surfaced and
+resolved four hidden dependencies — shared stimulus logic belongs in `core`; the
+UI preset-info module with its images belongs in `app`; a `version` import; and a
+Vite 8 config/Fast-Refresh issue. Tests and the frontend build were verified
+before each commit.
+
+Likely next directions (not committed as fixed milestones): a static in-frontend
+view of the hypotheses and their verdicts (browser-safe, reads the result JSON);
+a Claude layer that answers questions *about* finished results (no recompute);
+multi-solution robustness (re-running analyses at an ensemble of degenerate
+solutions — the largest open limitation, local→global); temperature/Q10 gating;
+and consolidating the six reports into one manuscript.
+
 ## Monorepo structure — and the boundary that must hold
 
 npm-workspaces monorepo with two packages:
