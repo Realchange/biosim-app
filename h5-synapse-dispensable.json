@@ -1,0 +1,6 @@
+{
+  "id": "h5-synapse-dispensable",
+  "statement": "Every individual graded synapse in the pyloric network is dispensable: each synaptic conductance can be reduced toward zero without destroying the triphasic rhythm.",
+  "formal": "For each synaptic conductance parameter s, a single-parameter sweep that reduces s over several orders of magnitude keeps the period-invariant phase distance below threshold, i.e. a large tolerated radius and a small maximum shape distance.",
+  "prediction": "Every synaptic sweep shows a small maximum phase distance and a large tolerated radius; no single synapse is necessary for the triphasic pattern."
+}

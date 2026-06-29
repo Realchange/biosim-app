@@ -1,0 +1,6 @@
+{
+  "id": "h6-period-control",
+  "statement": "A single intrinsic conductance acts as the dominant pacemaker of cycle period: varying it shifts the pyloric cycle length monotonically over a wide range, while the triphasic phase pattern is preserved.",
+  "formal": "There exists one intrinsic conductance g* such that a single-parameter sweep of g* produces a large, monotonic change in cycle period (large period-distance) but only a small change in the period-invariant phase pattern (small phase-distance). For non-pacemaker conductances, period-distance under the same sweep is comparatively small.",
+  "prediction": "Sweeping the pacemaker conductance moves the period strongly (high period-distance) while keeping the phase pattern intact (low phase-distance); most other conductances move the period much less."
+}
