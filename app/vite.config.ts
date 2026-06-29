@@ -1,7 +1,9 @@
-import { defineConfig } from 'vitest/config'
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
+// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   // Resolve the workspace core to its TypeScript source so the frontend uses a
