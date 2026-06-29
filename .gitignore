@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets — never commit API keys or environment files
+.env
+.env.*
+!.env.example
+
+# Local SQLite run-store (a regenerable cache; the JSON plans/verdicts are the durable artifacts)
+results/*.db
+results/*.db-journal
+results/*.db-wal
