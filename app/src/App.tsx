@@ -6,8 +6,11 @@ import { VoltageGraph }    from './components/VoltageGraph/VoltageGraph'
 import { SimControls }     from './components/SimControls/SimControls'
 import { GraphModal }      from './components/GraphModal/GraphModal'
 import { HelpModal }       from './components/Help/HelpModal'
-import { downloadNetwork, uploadNetwork } from './utils/fileIO'
+import { CreditsModal }    from './components/Credits/CreditsModal'
+import { downloadNetwork, uploadNetwork, CancelledError } from './utils/fileIO'
 import { APP_VERSION } from '@biosim/core'
+import { useT } from './i18n'
+import { LanguageSwitcher } from './i18n/LanguageSwitcher'
 import styles from './App.module.css'
 
 export default function App() {
@@ -15,6 +18,8 @@ export default function App() {
           loadedNetwork, graphWindowMs, setGraphWindowMs } = useNetworkStore()
   const [expandedNeuron, setExpandedNeuron] = useState<string | null>(null)
   const [showHelp, setShowHelp] = useState(false)
+  const [showCredits, setShowCredits] = useState(false)
+  const t = useT()
 
   // Scrolling-graph time window. Default to roughly the loaded example's own
   // timescale (so a 30 ms action potential and a 5 s rhythm both render sensibly).
@@ -33,7 +38,7 @@ export default function App() {
       const net = await uploadNetwork()
       loadNetwork(net)
     } catch (e) {
-      if ((e as Error).message !== 'Abgebrochen') {
+      if (!(e instanceof CancelledError)) {
         alert((e as Error).message)
       }
     }
@@ -50,13 +55,15 @@ export default function App() {
           onChange={e => setNetworkName(e.target.value)}
           onFocus={e => e.target.select()}
           spellCheck={false}
-          placeholder="Name der Simulation"
-          title="Name der Simulation – klicken zum Umbenennen"
-          aria-label="Name der Simulation"
+          placeholder={t.header.namePlaceholder}
+          title={t.header.nameTitle}
+          aria-label={t.header.nameAria}
         />
-        <button className={styles.headerBtn} onClick={handleLoad}>📂 Öffnen</button>
-        <button className={styles.headerBtn} onClick={handleSave}>💾 Speichern</button>
-        <button className={styles.headerBtn} onClick={() => setShowHelp(true)}>❓ Hilfe</button>
+        <button className={styles.headerBtn} onClick={handleLoad}>{t.header.open}</button>
+        <button className={styles.headerBtn} onClick={handleSave}>{t.header.save}</button>
+        <button className={styles.headerBtn} onClick={() => setShowHelp(true)}>{t.header.help}</button>
+        <button className={styles.headerBtn} onClick={() => setShowCredits(true)}>{t.header.credits}</button>
+        <LanguageSwitcher />
       </header>
 
       <div className={styles.main}>
@@ -69,6 +76,7 @@ export default function App() {
       </div>
       <GraphModal neuronId={expandedNeuron} onClose={() => setExpandedNeuron(null)} />
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showCredits && <CreditsModal onClose={() => setShowCredits(false)} />}
     </div>
   )
 }

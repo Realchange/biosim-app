@@ -5,6 +5,8 @@ import { COMPARTMENT_COLORS } from '@biosim/core'
 import type { LIFParams, HHParams } from '@biosim/core'
 import { FIXED_V_RANGE } from '../../utils/scale'
 import { stimulusCurrent } from '@biosim/core'
+import { exportTracesCSV, exportTracesPNG } from '../../utils/traceExport'
+import { useT } from '../../i18n'
 import styles from './VoltageGraph.module.css'
 
 const W = 360, PH = 120
@@ -38,6 +40,7 @@ function NeuronPanel({
   showTimeLabel: boolean
   onExpand?: () => void
 }) {
+  const t = useT()
   const innerW = W - MARGIN.left - MARGIN.right
   const innerH = PH - MARGIN.top - MARGIN.bottom
   const [vMin, vMax] = FIXED_V_RANGE
@@ -59,7 +62,7 @@ function NeuronPanel({
             </span>
           ))}
           {onExpand && (
-            <button className={styles.expandBtn} onClick={onExpand} title="Detailansicht öffnen">⛶</button>
+            <button className={styles.expandBtn} onClick={onExpand} title={t.voltage.expandTitle}>⛶</button>
           )}
         </span>
       </div>
@@ -113,7 +116,7 @@ function NeuronPanel({
           )
         })}
         {showTimeLabel && (
-          <text x={MARGIN.left + innerW / 2} y={PH - 1} fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
+          <text x={MARGIN.left + innerW / 2} y={PH - 1} fill="#8b949e" fontSize={9} textAnchor="middle">{t.graphModal.timeMs}</text>
         )}
 
         {/* Traces */}
@@ -136,6 +139,8 @@ function NeuronPanel({
 
 export function VoltageGraph({ traces, running, currentT = 0, windowMs = WINDOW_MS, onWindowMs, onExpand }: Props) {
   const neurons = useNetworkStore(s => s.neurons)
+  const networkName = useNetworkStore(s => s.networkName)
+  const t = useT()
 
   // Group traces by neuron — one stacked panel per measured neuron. The label uses
   // the neuron's role name if set, else its number in the FULL network (same as the
@@ -154,10 +159,10 @@ export function VoltageGraph({ traces, running, currentT = 0, windowMs = WINDOW_
     const indexOf = new Map(neurons.map((n, i) => [n.id, i]))
     return ordered.map((id, i) => ({
       id,
-      label: labelOf.get(id) ?? `Neuron ${(indexOf.get(id) ?? i) + 1}`,
+      label: labelOf.get(id) ?? t.canvas.neuron((indexOf.get(id) ?? i) + 1),
       traces: byNeuron.get(id)!,
     }))
-  }, [traces, neurons])
+  }, [traces, neurons, t])
 
   // Shared time axis across all panels so they line up for comparison. While running
   // it's a scrolling window of CONSTANT width windowMs ending at the current time
@@ -181,7 +186,7 @@ export function VoltageGraph({ traces, running, currentT = 0, windowMs = WINDOW_
     if (neurons.length === 0) return null
     return (
       <div className={styles.placeholder}>
-        <span>Klick auf ein Neuron setzt eine Messelektrode</span>
+        <span>{t.voltage.placeholder}</span>
       </div>
     )
   }
@@ -189,18 +194,26 @@ export function VoltageGraph({ traces, running, currentT = 0, windowMs = WINDOW_
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <span className={styles.headerTitle}>Spannung (mV)</span>
-        {onWindowMs && (
-          <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#8b949e' }}>
-            Fenster
-            <select value={WINDOW_OPTIONS.includes(windowMs) ? windowMs : ''}
-              onChange={e => onWindowMs(Number(e.target.value))}
-              style={{ background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4, fontSize: 10 }}>
-              {!WINDOW_OPTIONS.includes(windowMs) && <option value="">{fmtWin(windowMs)}</option>}
-              {WINDOW_OPTIONS.map(ms => <option key={ms} value={ms}>{fmtWin(ms)}</option>)}
-            </select>
-          </label>
-        )}
+        <span className={styles.headerTitle}>{t.voltage.title}</span>
+        <div className={styles.headerRight}>
+          {onWindowMs && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#8b949e' }}>
+              {t.voltage.window}
+              <select value={WINDOW_OPTIONS.includes(windowMs) ? windowMs : ''}
+                onChange={e => onWindowMs(Number(e.target.value))}
+                style={{ background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4, fontSize: 10 }}>
+                {!WINDOW_OPTIONS.includes(windowMs) && <option value="">{fmtWin(windowMs)}</option>}
+                {WINDOW_OPTIONS.map(ms => <option key={ms} value={ms}>{fmtWin(ms)}</option>)}
+              </select>
+            </label>
+          )}
+          <button className={styles.exportBtn} disabled={running}
+            onClick={() => exportTracesCSV(groups, networkName)}
+            title={t.voltage.csvTitle}>{t.voltage.csv}</button>
+          <button className={styles.exportBtn} disabled={running}
+            onClick={() => exportTracesPNG(groups, networkName, FIXED_V_RANGE)}
+            title={t.voltage.figureTitle}>{t.voltage.figure}</button>
+        </div>
       </div>
       <div className={styles.scroll}>
         {groups.map((g, i) => (

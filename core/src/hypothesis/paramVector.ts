@@ -5,7 +5,12 @@
 import type { Network, STGParams } from '../types'
 import type { ParameterVector, ParamMapping, ToVectorOptions } from './types'
 
-const STG_CONDUCTANCES: (keyof STGParams)[] = ['gNa', 'gCaT', 'gCaS', 'gA', 'gKCa', 'gKd', 'gH', 'gLeak']
+// Only the number-valued keys of STGParams (excludes inherited stimulus fields such as
+// stimType: 'pulse'|'ramp'), so the indexed accessors below read/write `number` rather
+// than the full property-value union. Purely a type narrowing — the listed keys are unchanged.
+// `-?` strips the optional modifier so optional props don't leak `undefined` into the key union.
+type NumericKeys<T> = { [K in keyof T]-?: T[K] extends number ? K : never }[keyof T]
+const STG_CONDUCTANCES: NumericKeys<STGParams>[] = ['gNa', 'gCaT', 'gCaS', 'gA', 'gKCa', 'gKd', 'gH', 'gLeak']
 
 interface Accessor { name: string; get(net: Network): number; set(net: Network, val: number): void }
 

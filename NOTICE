@@ -13,6 +13,19 @@ not themselves copyrightable; the attributions below acknowledge the sources our
 implementation reproduces or was guided by.
 
 --------------------------------------------------------------------------------
+0. BIOSIM (Stefan Bergdoll, 1990–1993)  — namesake and origin
+--------------------------------------------------------------------------------
+
+This project takes its name and inspiration from the original BIOSIM, a neural
+simulator written by Stefan Bergdoll (© 1990–1993, BASF-AG Ludwigshafen). Stefan
+Bergdoll laid the foundation for the author's simulation work and has since made
+the original source code available, for which we are deeply grateful. The present
+software is an independent reimplementation in a modern engine and shares no code
+with the original; the name is carried forward in tribute.
+
+    Original BIOSIM: (c) by Stefan Bergdoll, 1990–1993, BASF-AG Ludwigshafen
+
+--------------------------------------------------------------------------------
 1. mackelab/pyloric  (MIT License)  — code reference
 --------------------------------------------------------------------------------
 

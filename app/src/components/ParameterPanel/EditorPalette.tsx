@@ -1,18 +1,19 @@
 import { useNetworkStore } from '../../store/networkStore'
 import type { EditorTool, EditorModel } from '../../store/networkStore'
+import { useT } from '../../i18n'
 import styles from './EditorPalette.module.css'
-
-const TOOLS: { id: EditorTool; label: string }[] = [
-  { id: 'select',     label: '🔒 Sperre' },
-  { id: 'synapse',    label: '🔗 Synapse' },
-  { id: 'spiking',    label: '⚡ Spikend' },
-  { id: 'nonspiking', label: '○ Nicht-spikend' },
-  { id: 'afferent',   label: '▷ Afferenz' },
-]
 
 export function EditorPalette() {
   const { editorTool, editorModel, setEditorTool, setEditorModel,
           selectedId, synapses, removeNeuron, removeSynapse, setSelected } = useNetworkStore()
+  const t = useT()
+  const TOOLS: { id: EditorTool; label: string }[] = [
+    { id: 'select',     label: t.editor.toolSelect },
+    { id: 'synapse',    label: t.editor.toolSynapse },
+    { id: 'spiking',    label: t.editor.toolSpiking },
+    { id: 'nonspiking', label: t.editor.toolNonspiking },
+    { id: 'afferent',   label: t.editor.toolAfferent },
+  ]
   // Model selector applies only to spiking neurons (spiking / afferent tools).
   const modelDisabled = editorTool !== 'spiking' && editorTool !== 'afferent'
 
@@ -34,13 +35,13 @@ export function EditorPalette() {
           </button>
         ))}
         <button className={styles.delete} disabled={!selectedId}
-          title="Ausgewähltes Neuron oder Synapse löschen"
+          title={t.editor.deleteTitle}
           onClick={deleteSelected}>
-          🗑 Löschen
+          {t.editor.delete}
         </button>
       </div>
       <label className={styles.modelRow} style={{ opacity: modelDisabled ? 0.4 : 1 }}>
-        Modell:
+        {t.editor.model}
         <select value={editorModel} disabled={modelDisabled}
           onChange={e => setEditorModel(e.target.value as EditorModel)}>
           <option value="hodgkin-huxley">Hodgkin-Huxley</option>
@@ -48,11 +49,7 @@ export function EditorPalette() {
           <option value="stg">STG (Prinz)</option>
         </select>
       </label>
-      <div className={styles.hint}>
-        Platzier-Werkzeug → Klick auf freies Feld setzt ein Neuron. <strong>Synapse</strong>:
-        Quell-Neuron, dann Ziel-Neuron klicken. <strong>Sperre</strong>: kein Platzieren —
-        auswählen, verschieben, Elektroden setzen.
-      </div>
+      <div className={styles.hint}>{t.editor.hint}</div>
     </div>
   )
 }

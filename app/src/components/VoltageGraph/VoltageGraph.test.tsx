@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { VoltageGraph } from './VoltageGraph'
 import { useNetworkStore } from '../../store/networkStore'
 import type { VoltageTrace } from '../../store/networkStore'
+import { getMessages } from '../../i18n'
 
 describe('VoltageGraph', () => {
   it('renders nothing when there are no traces and no network (startup)', () => {
@@ -14,7 +15,7 @@ describe('VoltageGraph', () => {
   it('hints to add an electrode when a network exists but nothing is measured', () => {
     useNetworkStore.setState({ neurons: [{ id: 'n1', position: { x: 0, y: 0 }, model: 'lif', params: {} as never }] })
     const { getByText } = render(<VoltageGraph traces={[]} running={false} />)
-    expect(getByText(/Messelektrode/i)).toBeTruthy()
+    expect(getByText(getMessages().voltage.placeholder)).toBeTruthy()
     useNetworkStore.setState({ neurons: [] })
   })
 

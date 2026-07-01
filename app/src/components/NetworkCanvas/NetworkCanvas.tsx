@@ -7,6 +7,7 @@ import { SynapseArrow } from './SynapseArrow'
 import { COMPARTMENT_COLORS } from '@biosim/core'
 import type { Compartment, LIFParams, HHParams } from '@biosim/core'
 import { stimulusCurrent } from '@biosim/core'
+import { useT } from '../../i18n'
 import styles from './NetworkCanvas.module.css'
 
 // Injection point per compartment (left edge of the thermometer body).
@@ -27,6 +28,7 @@ export function NetworkCanvas() {
   const { neurons, synapses, mode, selectedId, electrodes, activity, sim, editorTool, editorModel,
           addNeuron, moveNeuron, setSelected, addSynapse, removeSynapse, setEditorTool,
           removeNeuron, addElectrode, removeElectrode } = useNetworkStore()
+  const t = useT()
   const svgRef = useRef<SVGSVGElement>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
@@ -102,7 +104,7 @@ export function NetworkCanvas() {
 
       {connectingFrom && (
         <text x={10} y={20} fill="#d29922" fontSize={12}>
-          Ziel-Neuron klicken um Synapse zu verbinden
+          {t.canvas.connectHint}
         </text>
       )}
 
@@ -124,7 +126,7 @@ export function NetworkCanvas() {
             {/* Label above the soma — role name if set, else the "Neuron N" numbering */}
             <text x={0} y={-68} textAnchor="middle" fill="#8b949e" fontSize={10}
               pointerEvents="none" style={{ userSelect: 'none' }}>
-              {neuron.label ?? `Neuron ${i + 1}`}
+              {neuron.label ?? t.canvas.neuron(i + 1)}
             </text>
             <NeuronSVG
               neuron={neuron}
@@ -164,9 +166,9 @@ export function NetworkCanvas() {
     </g>
     </svg>
       <div className={styles.zoom}>
-        <button title="Verkleinern" onClick={() => setZoom(z => Math.max(0.4, Math.round((z - 0.1) * 10) / 10))}>−</button>
-        <button title="100 %" onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</button>
-        <button title="Vergrößern" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>+</button>
+        <button title={t.canvas.zoomOut} onClick={() => setZoom(z => Math.max(0.4, Math.round((z - 0.1) * 10) / 10))}>−</button>
+        <button title={t.canvas.zoom100} onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</button>
+        <button title={t.canvas.zoomIn} onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>+</button>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import { autoScaleVoltage, FIXED_V_RANGE } from '../../utils/scale'
 import { HHParamsPanel } from '../ParameterPanel/HHParams'
 import { LIFParamsPanel } from '../ParameterPanel/LIFParams'
 import { STGParamsPanel } from '../ParameterPanel/STGParams'
+import { useT } from '../../i18n'
 import styles from './GraphModal.module.css'
 
 interface Props {
@@ -38,13 +39,14 @@ function iToY(I: number, iMin: number, iMax: number, h: number): number {
 
 export function GraphModal({ neuronId, onClose }: Props) {
   const { traces: allTraces, currentTraces: allCurrentTraces, neurons, simulationParams, sim, graphWindowMs } = useNetworkStore()
+  const tr_ = useT()
   const open = neuronId != null
   // Show only the selected neuron's traces — each neuron has its own detail view.
   const traces = allTraces.filter(t => t.neuronId === neuronId)
   const currentTraces = allCurrentTraces.filter(t => t.neuronId === neuronId)
   const neuron = neurons.find(n => n.id === neuronId)
   const neuronLabel = neuronId
-    ? (neuron?.label ?? `Neuron ${neurons.findIndex(n => n.id === neuronId) + 1}`)
+    ? (neuron?.label ?? tr_.canvas.neuron(neurons.findIndex(n => n.id === neuronId) + 1))
     : ''
   const dialogRef = useRef<HTMLDialogElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -219,10 +221,9 @@ export function GraphModal({ neuronId, onClose }: Props) {
   return (
     <dialog ref={dialogRef} className={styles.dialog}>
       <div className={styles.header}>
-        <span className={styles.title}>Messspur — {neuronLabel}</span>
+        <span className={styles.title}>{tr_.graphModal.title(neuronLabel)}</span>
         <span className={styles.hint}>
-          {scope ? '🔬 Oszilloskop: eine Reizperiode (Parameter rechts live ändern) · Scroll = Zoom'
-                 : 'Scroll zum Zoomen · Ziehen zum Verschieben'}
+          {scope ? tr_.graphModal.hintScope : tr_.graphModal.hintNormal}
         </span>
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
       </div>
@@ -233,22 +234,22 @@ export function GraphModal({ neuronId, onClose }: Props) {
 
       {/* ── Y-axis controls ── */}
       <div className={styles.axisControls}>
-        <label className={styles.axisLabel}>Y-Achse:</label>
+        <label className={styles.axisLabel}>{tr_.graphModal.yAxis}</label>
         <input className={styles.axisInput} type="number" value={vMinStr}
           onChange={e => setVMinStr(e.target.value)}
           onBlur={applyVAxis} onKeyDown={e => e.key === 'Enter' && applyVAxis()}
-          title="Y min (mV)" />
+          title={tr_.graphModal.yMinTitle} />
         <span className={styles.axisSep}>–</span>
         <input className={styles.axisInput} type="number" value={vMaxStr}
           onChange={e => setVMaxStr(e.target.value)}
           onBlur={applyVAxis} onKeyDown={e => e.key === 'Enter' && applyVAxis()}
-          title="Y max (mV)" />
+          title={tr_.graphModal.yMaxTitle} />
         <span className={styles.axisUnit}>mV</span>
-        <button className={styles.autoBtn} onClick={handleAutoScale}>Auto</button>
+        <button className={styles.autoBtn} onClick={handleAutoScale}>{tr_.graphModal.auto}</button>
       </div>
 
       {/* ── Voltage panel ── */}
-      <div className={styles.panelLabel}>Spannung (mV)</div>
+      <div className={styles.panelLabel}>{tr_.graphModal.voltagePanel}</div>
       <svg
         ref={svgRef}
         className={styles.svg}
@@ -278,7 +279,7 @@ export function GraphModal({ neuronId, onClose }: Props) {
 
         {/* X ticks + axis label */}
         {xTicks(tToVX, VH, MV)}
-        <text x={MV.left + vInnerW / 2} y={MV.top + VH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
+        <text x={MV.left + vInnerW / 2} y={MV.top + VH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">{tr_.graphModal.timeMs}</text>
 
         {/* Traces — clipped to plot area */}
         <g clipPath="url(#vClip)">
@@ -299,7 +300,7 @@ export function GraphModal({ neuronId, onClose }: Props) {
       </svg>
 
       {/* ── Current panel ── */}
-      <div className={styles.panelLabel}>Strom (nA)</div>
+      <div className={styles.panelLabel}>{tr_.graphModal.currentPanel}</div>
       <svg
         className={styles.svg}
         viewBox={`0 0 ${SVG_W} ${IH + MI.top + MI.bottom}`}
@@ -322,7 +323,7 @@ export function GraphModal({ neuronId, onClose }: Props) {
 
         {/* X ticks + axis label */}
         {xTicks(tToIX, IH, MI)}
-        <text x={MI.left + iInnerW / 2} y={MI.top + IH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">Zeit (ms)</text>
+        <text x={MI.left + iInnerW / 2} y={MI.top + IH + 30} fill="#8b949e" fontSize={9} textAnchor="middle">{tr_.graphModal.timeMs}</text>
 
         {/* Injected stimulus current as a step waveform (dashed, per neuron) */}
         {electrodeNeuronIds.map(nId => {
@@ -372,14 +373,14 @@ export function GraphModal({ neuronId, onClose }: Props) {
             </span>
           )
         })}
-        <span className={styles.legendHint}>— — Injektionsstrom · —— Synaptischer Strom</span>
+        <span className={styles.legendHint}>{tr_.graphModal.legendStim}</span>
       </div>
       </div>{/* .graphs */}
 
       {/* ── Parameter sidebar — edit while watching the detail (live) ── */}
       {neuron && (
         <div className={styles.paramSidebar}>
-          <div className={styles.sidebarTitle}>Parameter — {neuronLabel}</div>
+          <div className={styles.sidebarTitle}>{tr_.graphModal.paramTitle(neuronLabel)}</div>
           {neuron.model === 'hodgkin-huxley'
             ? <HHParamsPanel neuronId={neuron.id} params={neuron.params as HHParams} />
             : neuron.model === 'stg'

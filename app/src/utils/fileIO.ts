@@ -1,4 +1,9 @@
 import type { Network } from '@biosim/core'
+import { getMessages } from '../i18n'
+
+// Distinguishable error for a user-cancelled file dialog (so the caller can ignore
+// it regardless of the current UI language).
+export class CancelledError extends Error {}
 
 export function serializeNetwork(network: Network): string {
   const clean: Network = {
@@ -9,12 +14,13 @@ export function serializeNetwork(network: Network): string {
 }
 
 export function deserializeNetwork(json: string): Network {
+  const t = getMessages().fileError
   let data: unknown
-  try { data = JSON.parse(json) } catch { throw new Error('Ungültiges JSON') }
+  try { data = JSON.parse(json) } catch { throw new Error(t.invalidJson) }
   const net = data as Network
-  if (net.version !== 1) throw new Error(`Unbekannte Version: ${(data as Record<string, unknown>)['version']}`)
+  if (net.version !== 1) throw new Error(t.unknownVersion((data as Record<string, unknown>)['version']))
   if (!Array.isArray(net.neurons) || !Array.isArray(net.synapses)) {
-    throw new Error('Ungültiges Netzwerkformat')
+    throw new Error(t.invalidFormat)
   }
   return net
 }
@@ -47,13 +53,13 @@ export function uploadNetwork(): Promise<Network> {
     const onFocus = () => {
       // Give the change event time to fire before treating as cancel
       setTimeout(() => {
-        settle(() => reject(new Error('Abgebrochen')))
+        settle(() => reject(new CancelledError()))
       }, 300)
     }
 
     input.onchange = async () => {
       const file = input.files?.[0]
-      if (!file) return settle(() => reject(new Error('Keine Datei ausgewählt')))
+      if (!file) return settle(() => reject(new Error(getMessages().fileError.noFile)))
       try {
         const text = await file.text()
         settle(() => resolve(deserializeNetwork(text)))

@@ -2,15 +2,9 @@ import type { HHParams as HHParamsType, Compartment } from '@biosim/core'
 import { useNetworkStore } from '../../store/networkStore'
 import { StimParams } from './StimParams'
 import { SectionLabel } from '../common/SectionLabel'
+import { useT } from '../../i18n'
 
 interface Props { neuronId: string; params: HHParamsType; studentMode?: boolean }
-
-const STIM_SITES: { value: Compartment; label: string }[] = [
-  { value: 'soma',  label: 'Soma' },
-  { value: 'dend1', label: 'Dendrit 1' },
-  { value: 'dend2', label: 'Dendrit 2' },
-  { value: 'dend3', label: 'Dendrit 3' },
-]
 
 const ALL_FIELDS = [
   { key: 'g_Na',   label: 'g_Na (mS/cm²)',  min: 0,    max: 200, step: 1 },
@@ -19,19 +13,26 @@ const ALL_FIELDS = [
   { key: 'E_Na',   label: 'E_Na (mV)',       min: 30,   max: 80,  step: 1 },
   { key: 'E_K',    label: 'E_K (mV)',        min: -100, max: -60, step: 1 },
   { key: 'C_m',    label: 'C_m (µF/cm²)',   min: 0.1,  max: 5,   step: 0.1 },
-  { key: 'g_core', label: 'g_core (axial)', min: 0,    max: 1,   step: 0.01 },
+  { key: 'g_core', label: 'g_core', min: 0,    max: 1,   step: 0.01 },
 ]
 const STUDENT_KEYS = ['g_Na', 'g_K', 'g_Ca']
 
 export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
   const { updateNeuron } = useNetworkStore()
+  const t = useT()
+  const STIM_SITES: { value: Compartment; label: string }[] = [
+    { value: 'soma',  label: t.syn.soma },
+    { value: 'dend1', label: t.syn.dend1 },
+    { value: 'dend2', label: t.syn.dend2 },
+    { value: 'dend3', label: t.syn.dend3 },
+  ]
   const fields = studentMode ? ALL_FIELDS.filter(f => STUDENT_KEYS.includes(f.key)) : ALL_FIELDS
 
   return (
     <>
-      <SectionLabel first>Reiz</SectionLabel>
+      <SectionLabel first>{t.hh.stimulus}</SectionLabel>
       <label style={{ display: 'block', marginBottom: 8 }}>
-        <span style={{ color: '#8b949e', fontSize: 10 }}>Reizort</span>
+        <span style={{ color: '#8b949e', fontSize: 10 }}>{t.hh.stimSite}</span>
         <select
           value={params.stimCompartment ?? 'soma'}
           style={{ width: '100%', background: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', borderRadius: 4, padding: '2px 4px', fontSize: 11 }}
@@ -40,10 +41,10 @@ export function HHParamsPanel({ neuronId, params, studentMode }: Props) {
         </select>
       </label>
       <StimParams neuronId={neuronId} params={params} iStimMax={100} />
-      <SectionLabel>Neuron-Parameter</SectionLabel>
+      <SectionLabel>{t.hh.neuronParams}</SectionLabel>
       {fields.map(f => (
         <label key={f.key} style={{ display: 'block', marginBottom: 8 }}>
-          <span style={{ color: '#8b949e', fontSize: 10 }}>{f.label}</span>
+          <span style={{ color: '#8b949e', fontSize: 10 }}>{f.key === 'g_core' ? t.hh.gCore : f.label}</span>
           <input type="range" min={f.min} max={f.max} step={f.step}
             value={params[f.key as keyof HHParamsType] ?? 0}
             style={{ width: '100%' }}

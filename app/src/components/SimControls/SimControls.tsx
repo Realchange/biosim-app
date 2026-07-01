@@ -1,12 +1,19 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useNetworkStore } from '../../store/networkStore'
 import type { WorkerOutMessage } from '../../worker/worker'
+import { useT } from '../../i18n'
 import styles from './SimControls.module.css'
 
 export function SimControls() {
   const { sim, simulationParams, loadedNetwork,
           setSim, setActivity, setSimulationParams, clearTraces, appendTracePoints, appendCurrentPoints, updateNeuron, restorePresetParams } = useNetworkStore()
+  const t = useT()
   const workerRef = useRef<Worker | null>(null)
+  // Local string buffer for the duration field so intermediate edits (empty, a
+  // partial number) are allowed while typing. Without it, deleting the first digit
+  // of "5000" briefly yields 0, which fails the >0 guard, so the store keeps 5000
+  // and the field snaps back — the deleted digit reappears.
+  const [durationEdit, setDurationEdit] = useState<string | null>(null)
   // Refs so the worker's message handler always sees the latest loop flag / start fn.
   const loopRef = useRef(sim.loop)
   const startRef = useRef<() => void>(() => {})
@@ -147,32 +154,32 @@ export function SimControls() {
   return (
     <div className={styles.controls}>
       <button className={styles.primary} onClick={() => start(false)} disabled={sim.running && !sim.paused}>
-        ▶ Start
+        {t.controls.start}
       </button>
       <button className={sim.live ? styles.loopOn : ''}
         onClick={() => (sim.live ? reset() : start(true))}
         disabled={sim.running && !sim.live}
-        title="Live-Modus: läuft endlos, Parameter während der Simulation per Regler verändern. Nochmal klicken zum Stoppen.">
-        {sim.live ? '■ Live stoppen' : '🎚 Live'}
+        title={t.controls.liveTitle}>
+        {sim.live ? t.controls.liveStop : t.controls.live}
       </button>
       <button onClick={pause} disabled={!sim.running}>
-        {sim.paused ? '▶ Weiter' : '⏸ Pause'}
+        {sim.paused ? t.controls.resume : t.controls.pause}
       </button>
       <button onClick={reset}>
-        ⏮ Reset
+        {t.controls.reset}
       </button>
       <button onClick={restorePresetParams} disabled={!loadedNetwork}
-        title="Parameter auf die Werte des geladenen Beispiels zurücksetzen">
-        ↺ Preset
+        title={t.controls.presetTitle}>
+        {t.controls.preset}
       </button>
       <button
         className={sim.loop ? styles.loopOn : ''}
         onClick={() => setSim({ loop: !sim.loop })}
-        title="Simulation in Endlosschleife wiederholen">
-        🔁 Loop
+        title={t.controls.loopTitle}>
+        {t.controls.loop}
       </button>
-      <label className={styles.tempo} title="Wiedergabe-Tempo (langsam ⟷ schnell)">
-        Tempo:
+      <label className={styles.tempo} title={t.controls.tempoTitle}>
+        {t.controls.tempo}
         <input
           type="range"
           min={0}
@@ -187,22 +194,24 @@ export function SimControls() {
         />
       </label>
       <label className={styles.duration}>
-        Dauer:
+        {t.controls.duration}
         <input
           type="number"
           min={1}
           max={10000}
           step={10}
-          value={simulationParams.length}
+          value={durationEdit ?? String(simulationParams.length)}
           disabled={sim.running}
           onChange={(e) => {
+            setDurationEdit(e.target.value)
             const v = Number(e.target.value)
             if (Number.isFinite(v) && v > 0) setSimulationParams({ length: v })
           }}
+          onBlur={() => setDurationEdit(null)}
         />
-        ms
+        {t.controls.durationUnit}
       </label>
-      <span className={styles.time}>t = {sim.t.toFixed(1)} ms</span>
+      <span className={styles.time}>{t.controls.time(sim.t.toFixed(1))}</span>
     </div>
   )
 }

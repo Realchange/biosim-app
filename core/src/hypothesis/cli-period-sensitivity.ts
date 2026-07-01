@@ -67,7 +67,9 @@ function main() {
   const sha = gitSha()
   mkdirSync('results', { recursive: true })
   const path = `results/period-sensitivity-${(sha ?? 'nogit').slice(0, 8)}.json`
-  writeFileSync(path, JSON.stringify({ codeVersion: APP_VERSION, gitSha: sha, sim: SIM, eps: EPS, ...res }, null, 2))
+  // `res` already carries `eps`; the spread provides it, so no explicit `eps: EPS` (which
+  // the spread would overwrite anyway — the written value is unchanged).
+  writeFileSync(path, JSON.stringify({ codeVersion: APP_VERSION, gitSha: sha, sim: SIM, ...res }, null, 2))
   console.log(`\nStored to ${path}\n`)
 }
 

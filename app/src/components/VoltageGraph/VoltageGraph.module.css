@@ -8,6 +8,13 @@
   padding: 4px 8px; border-bottom: 1px solid #21262d; flex-shrink: 0;
 }
 .headerTitle { color: #8b949e; font-size: 10px; }
+.headerRight { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.exportBtn {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 2px 7px; border-radius: 4px; cursor: pointer; font-size: 10px; white-space: nowrap;
+}
+.exportBtn:hover:not(:disabled) { background: #30363d; }
+.exportBtn:disabled { opacity: 0.4; cursor: default; }
 .expandBtn {
   background: none; border: none; cursor: pointer; color: #8b949e;
   font-size: 14px; padding: 0 2px; line-height: 1;

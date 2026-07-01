@@ -3,6 +3,9 @@
 // See docs/HYPOTHESIS_ENGINE_SPEC.md §5. M1 implements ParameterVector/ParamMapping,
 // SummaryStats/DistanceMetric; the rest are declared here so the contract is complete.
 import type { Network } from '../types'
+// Re-export so files under hypothesis/analysis/ (whose '../types' resolves to THIS
+// barrel) can import Network alongside SimSettings/PyloricRole from one place.
+export type { Network }
 
 /** The three pyloric roles, mapped to the neuron ids used in the reference preset. */
 export type PyloricRole = 'ABPD' | 'LP' | 'PY'

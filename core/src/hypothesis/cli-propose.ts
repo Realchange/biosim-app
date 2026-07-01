@@ -8,7 +8,7 @@ import { getTransformer } from './llm'
 import { validatePlan, DEFAULT_CAPS } from './llm/schema'
 import { priorFromVerdictFile } from './llm/digest'
 import { briefOf } from './llm/types'
-import type { HypothesisBrief, AnalysisDigest } from './llm/types'
+import type { HypothesisBrief } from './llm/types'
 
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag)

@@ -2,6 +2,7 @@ import type { STGParams as STGParamsType } from '@biosim/core'
 import { useNetworkStore } from '../../store/networkStore'
 import { NumberField } from '../common/NumberField'
 import { SectionLabel } from '../common/SectionLabel'
+import { useT } from '../../i18n'
 
 interface Props { neuronId: string; params: STGParamsType }
 
@@ -21,20 +22,22 @@ const CONDUCTANCES: Field[] = [
 ]
 const DRIVE: Field[] = [
   { key: 'I_stim', label: 'I_stim', unit: 'µA',     min: 0, max: 0.06,  step: 0.002 },
-  { key: 'noise',  label: 'Rauschen σ', unit: 'µA', min: 0, max: 0.005, step: 0.0005 },
+  { key: 'noise',  label: 'noise', unit: 'µA', min: 0, max: 0.005, step: 0.0005 },
 ]
 
 export function STGParamsPanel({ neuronId, params }: Props) {
   const { updateNeuron } = useNetworkStore()
+  const t = useT()
   const setVal = (key: keyof STGParamsType, v: number) =>
     updateNeuron(neuronId, { params: { ...params, [key]: v } })
 
   const row = (f: Field) => {
     const val = (params[f.key] as number) ?? 0
+    const label = f.key === 'noise' ? t.stg.noiseLabel : f.label
     return (
       <label key={f.key} style={{ display: 'block', marginBottom: 7 }}>
         <span style={{ color: '#8b949e', fontSize: 10 }}>
-          {f.label} <span style={{ color: '#6e7681' }}>({f.unit})</span>
+          {label} <span style={{ color: '#6e7681' }}>({f.unit})</span>
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <input type="range" min={f.min} max={f.max} step={f.step} value={val}
@@ -50,9 +53,9 @@ export function STGParamsPanel({ neuronId, params }: Props) {
 
   return (
     <>
-      <SectionLabel first>Leitfähigkeiten</SectionLabel>
+      <SectionLabel first>{t.stg.conductances}</SectionLabel>
       {CONDUCTANCES.map(row)}
-      <SectionLabel>Antrieb &amp; Rauschen</SectionLabel>
+      <SectionLabel>{t.stg.driveNoise}</SectionLabel>
       {DRIVE.map(row)}
     </>
   )
