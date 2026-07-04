@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T08:13:31.281Z",
+  "generatedAt": "2026-07-04T10:50:39.303Z",
   "hypothesisId": "h6-period-control",
   "title": {
     "en": "H6 — cycle-period control: two autonomous self-corrections",
@@ -33,8 +33,8 @@
         "en": "To test the guess, the system turns each control across a very wide range and watches how much the rhythm changes each time. The result is surprising: the very control one would have expected to be the main pacemaker turns out to be the weakest — and others thought unimportant turn out strongest. So the guess of \"a single pacemaker\" is refuted, for now. The system names a new suspect (a control called gKd) — but this result rests on shaky ground, as the next station shows.",
         "de": "Um die Vermutung zu prüfen, dreht das System bei jedem Regler über einen sehr weiten Bereich und schaut, wie stark sich der Rhythmus jeweils ändert. Das Ergebnis ist überraschend: Ausgerechnet der Regler, den man für den Haupt-Taktgeber gehalten hätte, wirkt am schwächsten — und andere, die man für unwichtig hielt, wirken am stärksten. Die Vermutung „ein einziger Taktgeber\" ist damit erst einmal widerlegt. Das System benennt einen neuen Verdächtigen (einen Regler namens gKd) — doch dieses Ergebnis steht auf wackligem Boden, wie die nächste Station zeigt."
       },
-      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T14-08-07-460Z.json",
-      "permalink": "https://github.com/Realchange/biosim-app/blob/490faa4/core/results/verdicts/h6-period-control-2026-06-28T14-08-07-460Z.json",
+      "sourceFile": "docs/data/sources/h6-period-control-2026-06-28T14-08-07-460Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/main/docs/data/sources/h6-period-control-2026-06-28T14-08-07-460Z.json",
       "refinedClaim": {
         "en": "A single control does not pace the rhythm across the board. The sharper follow-up claim names one specific control (gKd) as the strongest candidate — to be put to a stricter test in the next round.",
         "de": "Ein einzelner Regler taktet den Rhythmus nicht auf ganzer Linie. Die geschärfte Nachfolge-Behauptung (Claim) benennt einen bestimmten Regler (gKd) als stärksten Kandidaten — der in der nächsten Runde einer strengeren Prüfung unterzogen wird."
@@ -89,8 +89,8 @@
         "en": "With the finer measurement, two controls (gKd and gCaS) now look especially strong. The instrument shows a powerful effect for both. But here lurks the next trap: a powerful effect can mean two things. Either the control shifts the pace smoothly and in a controlled way — or it strangles the rhythm entirely. On the instrument, both look the same at first. The instrument of the time could only tell \"rhythm there or not there\" and so conflated these two completely different things. Exactly this error is uncovered in the next station.",
         "de": "Mit der feineren Messung sehen jetzt zwei Regler (gKd und gCaS) besonders stark aus. Das Messgerät zeigt für beide einen kräftigen Effekt. Doch hier lauert die nächste Falle: Ein kräftiger Effekt kann zweierlei bedeuten. Entweder verschiebt der Regler den Takt sauber und kontrolliert — oder er würgt den Rhythmus ganz ab. Beides sieht auf dem Messgerät zunächst gleich aus. Das damalige Messgerät konnte nur „Rhythmus da oder nicht da\" unterscheiden und vermischte deshalb diese zwei völlig verschiedenen Dinge. Genau dieser Fehler wird in der nächsten Station aufgedeckt."
       },
-      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T15-08-28-085Z.json",
-      "permalink": "https://github.com/Realchange/biosim-app/blob/490faa4/core/results/verdicts/h6-period-control-2026-06-28T15-08-28-085Z.json"
+      "sourceFile": "docs/data/sources/h6-period-control-2026-06-28T15-08-28-085Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/main/docs/data/sources/h6-period-control-2026-06-28T15-08-28-085Z.json"
     },
     {
       "id": "correction2",
@@ -184,8 +184,8 @@
           "meanDistanceMisaligned": 1.07
         }
       },
-      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T17-55-14-317Z.json",
-      "permalink": "https://github.com/Realchange/biosim-app/blob/85f8394/core/results/verdicts/h6-period-control-2026-06-28T17-55-14-317Z.json",
+      "sourceFile": "docs/data/sources/h6-period-control-2026-06-28T17-55-14-317Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/main/docs/data/sources/h6-period-control-2026-06-28T17-55-14-317Z.json",
       "refinedClaim": {
         "en": "Among the controls tested, gCaT and gKCa are the best candidates for smooth pace control (both show a real effect with no collapse at all), with gCaT the strongest of them. The controls that looked strongest (gKd, gCaS) are necessary for the rhythm to exist but do not steer its pace. Cycle period is thus controlled in a distributed way, not by a single pacemaker — a claim that remains open to disproof (falsifiable) by a wide, collapse-free test of gCaT.",
         "de": "Unter den geprüften Reglern sind gCaT und gKCa die besten Kandidaten für eine sanfte Takt-Steuerung (beide zeigen einen echten Effekt ganz ohne Zusammenbruch), wobei gCaT der stärkste von ihnen ist. Die scheinbar stärksten Regler (gKd, gCaS) sind notwendig dafür, dass überhaupt ein Rhythmus existiert, steuern aber nicht seinen Takt. Der Takt wird somit verteilt gesteuert, nicht von einem einzelnen Taktgeber — eine Aussage, die durch einen breiten, kollaps-freien Test von gCaT widerlegbar (falsifizierbar) bleibt."

@@ -28,9 +28,10 @@ const VERDICT_DIR = path.join(REPO_ROOT, 'core', 'results', 'verdicts');
 const OUT_DIR     = path.join(__dirname, 'data');
 const SRC_OUT_DIR = path.join(OUT_DIR, 'sources');
 
-// GitHub repo coordinates for permalinks (pinned per-station to gitSha).
+// GitHub repo coordinates for permalinks.
 const GH_OWNER = 'Realchange';
 const GH_REPO  = 'biosim-app';
+const GH_REF   = 'main';   // published copies live on main under docs/data/sources/
 
 // --- The four verdict files central to the H6 case study ---------------------
 const KEY_VERDICTS = {
@@ -80,8 +81,16 @@ function findExp(digest, labelIncludes) {
   });
 }
 
-function permalink(gitSha, relPath) {
-  return `https://github.com/${GH_OWNER}/${GH_REPO}/blob/${gitSha}/${relPath}`;
+// The verdict files are published (verbatim) under docs/data/sources/. Links must
+// point there — NOT to core/results/verdicts/, which is not part of the public repo.
+// The original experiment commit (provenance.gitSha) is still shown as a badge on
+// each station, so scientific origin is preserved even though the clickable link
+// resolves to the published copy.
+function publishedPath(file) {
+  return `docs/data/sources/${file}`;
+}
+function permalink(file) {
+  return `https://github.com/${GH_OWNER}/${GH_REPO}/blob/${GH_REF}/${publishedPath(file)}`;
 }
 
 // --- Curated station metadata (prose human-authored EN+DE; numbers injected) -
@@ -134,8 +143,8 @@ function buildTimeline() {
         'einen neuen Verdächtigen (einen Regler namens gKd) — doch dieses Ergebnis steht auf ' +
         'wackligem Boden, wie die nächste Station zeigt.',
     },
-    sourceFile: `core/results/verdicts/${r1.file}`,
-    permalink: permalink(r1.data.provenance.gitSha, `core/results/verdicts/${r1.file}`),
+    sourceFile: publishedPath(r1.file),
+    permalink: permalink(r1.file),
     refinedClaim: {
       en: 'A single control does not pace the rhythm across the board. The sharper follow-up claim ' +
         'names one specific control (gKd) as the strongest candidate — to be put to a stricter test ' +
@@ -225,8 +234,8 @@ function buildTimeline() {
         'unterscheiden und vermischte deshalb diese zwei völlig verschiedenen Dinge. Genau dieser ' +
         'Fehler wird in der nächsten Station aufgedeckt.',
     },
-    sourceFile: `core/results/verdicts/${r2raw.file}`,
-    permalink: permalink(r2raw.data.provenance.gitSha, `core/results/verdicts/${r2raw.file}`),
+    sourceFile: publishedPath(r2raw.file),
+    permalink: permalink(r2raw.file),
   });
 
   // Station 4 — Self-correction 2: the metric itself is revised
@@ -344,8 +353,8 @@ function buildTimeline() {
         meanDistanceMisaligned: rand.metrics.meanDistanceMisaligned,
       } : null,
     },
-    sourceFile: `core/results/verdicts/${r2re.file}`,
-    permalink: permalink(r2re.data.provenance.gitSha, `core/results/verdicts/${r2re.file}`),
+    sourceFile: publishedPath(r2re.file),
+    permalink: permalink(r2re.file),
     refinedClaim: {
       en: 'Among the controls tested, gCaT and gKCa are the best candidates for smooth pace control ' +
         '(both show a real effect with no collapse at all), with gCaT the strongest of them. The ' +
@@ -398,7 +407,7 @@ function buildContrast() {
     generatedAt: new Date().toISOString(),
     version: r2re.data.provenance.codeVersion,
     gitSha: r2re.data.provenance.gitSha,
-    sourceFile: `core/results/verdicts/${r2re.file}`,
+    sourceFile: publishedPath(r2re.file),
     caption: {
       en: 'One and the same measurements from round 2. Looking only at the effect strength (first ' +
         'reading), gKd and gCaS appear to be the strongest pacemakers. But once you also record ' +

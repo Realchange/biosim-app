@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-04T08:13:31.281Z",
+  "generatedAt": "2026-07-04T10:50:39.307Z",
   "version": "0.65",
   "gitSha": "85f8394",
-  "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T17-55-14-317Z.json",
+  "sourceFile": "docs/data/sources/h6-period-control-2026-06-28T17-55-14-317Z.json",
   "caption": {
     "en": "One and the same measurements from round 2. Looking only at the effect strength (first reading), gKd and gCaS appear to be the strongest pacemakers. But once you also record whether the rhythm collapses in the process (second reading), the picture reverses: their strength comes from strangling the rhythm, not from steering the pace.",
     "de": "Ein und dieselben Messungen aus Runde 2. Sieht man nur die Effektstärke (erste Sichtweise), erscheinen gKd und gCaS als stärkste Taktgeber. Sobald man aber miterfasst, ob der Rhythmus dabei zusammenbricht (zweite Sichtweise), kehrt sich das Bild um: Ihre Stärke kommt vom Abwürgen des Rhythmus, nicht vom Steuern des Takts."
