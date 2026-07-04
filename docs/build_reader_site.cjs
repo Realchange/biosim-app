@@ -25,6 +25,7 @@ const path = require('path');
 // --- Paths -------------------------------------------------------------------
 const REPO_ROOT   = path.resolve(__dirname, '..');
 const VERDICT_DIR = path.join(REPO_ROOT, 'core', 'results', 'verdicts');
+const TRACE_DIR   = path.join(REPO_ROOT, 'core', 'results', 'traces');
 const OUT_DIR     = path.join(__dirname, 'data');
 const SRC_OUT_DIR = path.join(OUT_DIR, 'sources');
 
@@ -532,6 +533,109 @@ function buildLoop() {
   };
 }
 
+// --- Voltage traces (Figure 2): parse real CSV exports from the simulator ----
+// The CLI src/hypothesis/cli-export-trace.ts writes reference.csv and
+// collapsed.csv into core/results/traces/. Each carries provenance in # comment
+// lines. We parse them into a compact JSON the reader page draws as SVG. Numbers
+// come straight from the simulator; only the captions are human-authored.
+function parseTraceCsv(file) {
+  const raw = fs.readFileSync(path.join(TRACE_DIR, file), 'utf8');
+  const meta = {};
+  const rows = [];
+  let headerSeen = false;
+  for (const line of raw.split(/\r?\n/)) {
+    if (line.startsWith('#')) {
+      line.slice(1).trim().split(/\s+/).forEach(tok => {
+        const m = tok.match(/^([A-Za-z.]+)=(.+)$/);
+        if (m) meta[m[1]] = m[2];
+      });
+      continue;
+    }
+    if (!line.trim()) continue;
+    if (!headerSeen) { headerSeen = true; continue; }  // skip "t_ms,v_abpd,v_lp,v_py"
+    const p = line.split(',').map(Number);
+    if (p.length === 4 && p.every(Number.isFinite)) rows.push(p);
+  }
+  return { meta, rows };
+}
+
+function buildTraces() {
+  const refFile = 'reference.csv';
+  const colFile = 'collapsed.csv';
+  const ref = parseTraceCsv(refFile);
+  const col = parseTraceCsv(colFile);
+
+  // Series as parallel arrays keep the JSON small.
+  const pack = (parsed) => ({
+    t:     parsed.rows.map(r => r[0]),
+    abpd:  parsed.rows.map(r => r[1]),
+    lp:    parsed.rows.map(r => r[2]),
+    py:    parsed.rows.map(r => r[3]),
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    cells: [
+      { key: 'abpd', label: 'AB/PD' },
+      { key: 'lp',   label: 'LP' },
+      { key: 'py',   label: 'PY' },
+    ],
+    scaleBarMv: 25,
+    reference: {
+      series: pack(ref),
+      version: ref.meta.version,
+      gitSha: ref.meta.gitSha,
+      noise: ref.meta.noise,
+      durationMs: Number(ref.meta.durationMs),
+      title: {
+        en: 'Intact reference rhythm',
+        de: 'Intakter Referenzrhythmus',
+      },
+      caption: {
+        en: 'The three cells fire in the fixed order AB/PD → LP → PY — the healthy ' +
+          'triphasic pyloric rhythm. This is what the simulator produces at the reference ' +
+          'settings; every later experiment is compared against it.',
+        de: 'Die drei Zellen feuern in der festen Reihenfolge AB/PD → LP → PY — der gesunde ' +
+          'dreiphasige pylorische Rhythmus. Das erzeugt der Simulator bei den Referenz-' +
+          'Einstellungen; jedes spätere Experiment wird damit verglichen.',
+      },
+    },
+    collapsed: {
+      series: pack(col),
+      version: col.meta.version,
+      gitSha: col.meta.gitSha,
+      noise: col.meta.noise,
+      durationMs: Number(col.meta.durationMs),
+      collapseParam: col.meta.collapse,       // e.g. "abpd.gKd"
+      logfactor: Number(col.meta.logfactor),  // e.g. -2
+      collapsed: col.meta.collapsed === 'true',
+      title: {
+        en: 'Collapsed rhythm (gKd strongly reduced)',
+        de: 'Kollabierter Rhythmus (gKd stark reduziert)',
+      },
+      caption: {
+        en: 'Here the control gKd of the pacemaker cell AB/PD is turned far down ' +
+          '(log-factor \u22122). AB/PD loses its regular bursting — the pacemaker that sets ' +
+          'the beat falls silent. LP and PY still fire, but without the pacemaker\u2019s drive ' +
+          'there is no ordered three-phase rhythm any more. This is what "strangling the rhythm" ' +
+          'looks like: not a change of pace, but its abolition.',
+        de: 'Hier ist der Regler gKd der Schrittmacherzelle AB/PD weit heruntergedreht ' +
+          '(Log-Faktor \u22122). AB/PD verliert sein regelmäßiges Bursting — der Taktgeber, der ' +
+          'den Rhythmus vorgibt, verstummt. LP und PY feuern zwar noch, aber ohne den Antrieb des ' +
+          'Schrittmachers gibt es keinen geordneten Dreiphasen-Rhythmus mehr. So sieht „den ' +
+          'Rhythmus abwürgen" aus: keine Änderung des Takts, sondern seine Abschaffung.',
+      },
+    },
+    contrastNote: {
+      en: 'Same circuit, same simulator — only one control turned down. The contrast makes ' +
+        'the H6 finding tangible: a high measured "effect" for gKd was collapse, not pace control.',
+      de: 'Gleicher Schaltkreis, gleicher Simulator — nur ein Regler heruntergedreht. Der ' +
+        'Kontrast macht den H6-Befund greifbar: Ein hoher gemessener „Effekt" von gKd war ' +
+        'Kollaps, nicht Takt-Steuerung.',
+    },
+  };
+}
+
 // --- Copy the four verdicts verbatim into docs/data/sources/ -----------------
 function copySources() {
   for (const key of Object.keys(KEY_VERDICTS)) {
@@ -561,10 +665,21 @@ function main() {
   fs.writeFileSync(path.join(OUT_DIR, 'h6_loop.json'), JSON.stringify(loop, null, 2));
   copySources();
 
+  // Voltage traces are optional: only build if the CSV exports are present.
+  let traceInfo = 'skipped (no core/results/traces/reference.csv)';
+  const refCsv = path.join(TRACE_DIR, 'reference.csv');
+  const colCsv = path.join(TRACE_DIR, 'collapsed.csv');
+  if (fs.existsSync(refCsv) && fs.existsSync(colCsv)) {
+    const traces = buildTraces();
+    fs.writeFileSync(path.join(OUT_DIR, 'h6_traces.json'), JSON.stringify(traces));
+    traceInfo = `${traces.reference.series.t.length} + ${traces.collapsed.series.t.length} samples`;
+  }
+
   console.log('Reader-site export complete (bilingual EN/DE):');
   console.log('  docs/data/h6_timeline.json   (' + timeline.stations.length + ' stations)');
   console.log('  docs/data/h6_contrast.json   (' + contrast.rows.length + ' rows)');
   console.log('  docs/data/h6_loop.json       (' + loop.nodes.length + ' loop nodes)');
+  console.log('  docs/data/h6_traces.json     (' + traceInfo + ')');
   console.log('  docs/data/sources/           (' + Object.keys(KEY_VERDICTS).length + ' verdict files)');
   for (const key of Object.keys(KEY_VERDICTS)) {
     console.log('    - ' + KEY_VERDICTS[key].file);

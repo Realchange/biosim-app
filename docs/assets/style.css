@@ -143,6 +143,27 @@ body {
   .loop-detail { position: static; }
 }
 
+/* Voltage traces */
+.trace-intro-section { padding: 8px 0 8px; }
+.trace-block { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+.trace-title { margin: 0 0 10px; font-size: 1.05rem; font-weight: 600; font-family: var(--font); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.trace-figure { width: 100%; overflow: hidden; }
+.trace-svg { width: 100%; height: auto; display: block; }
+.trace-path { stroke: #2e6ea3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.trace-axis { stroke: var(--line); stroke-width: 1; }
+.trace-cell-label { font-family: var(--font); font-weight: 700; font-size: 13px; fill: var(--ink); }
+.trace-scalebar { stroke: var(--ink); stroke-width: 2.5; }
+.trace-scale-label { font-family: var(--mono); font-size: 11px; fill: var(--ink); }
+.trace-time-label { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.trace-caption { margin: 12px 0 4px; font-size: 0.95rem; color: #333; }
+.trace-prov { margin: 4px 0 0; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+
+.trace-contrast-section { padding: 28px 0 8px; border-top: 1px solid var(--line); }
+.trace-contrast-section h2 { font-size: 1.4rem; margin: 24px 0 10px; }
+.trace-contrast-note { font-size: 1.02rem; color: #444; margin: 0 0 18px; }
+.trace-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 720px) { .trace-pair { grid-template-columns: 1fr; } }
+
 /* Timeline */
 .timeline { padding: 32px 0; display: flex; flex-direction: column; gap: 18px; }
 

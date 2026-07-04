@@ -7,6 +7,7 @@ let LANG = 'en';                 // current language
 let timelineData = null;
 let contrastData = null;
 let loopData = null;
+let traceData = null;
 let loopSelected = 'hypothesis';
 let contrastMode = 'slope';
 
@@ -92,6 +93,10 @@ const UI = {
   refined_hint: {
     en: 'Plain-language summary of the AI\u2019s verdict. The verbatim original is in the linked source file.',
     de: 'Verständliche Zusammenfassung des KI-Urteils (Verdikt). Der wörtliche Originaltext steht in der verlinkten Quelldatei.',
+  },
+  trace_contrast_h2: {
+    en: 'What "collapse" actually looks like',
+    de: 'Wie ein „Kollaps" tatsächlich aussieht',
   },
   build_meta: { en: 'Export', de: 'Export' },
   primer_guide_label: '',   // handled inside primer HTML
@@ -203,6 +208,9 @@ function applyLanguage() {
   // Loop diagram
   if (loopData) renderLoop(loopData);
 
+  // Voltage traces
+  if (traceData) renderTraces();
+
   // Build-meta line
   if (timelineData) {
     document.getElementById('build-meta').textContent =
@@ -269,6 +277,88 @@ function renderLoop(loop) {
     `<span class="loop-detail-actor actor-${sel.actor}">${t(ACTOR_LABEL[sel.actor])}</span>` +
     `<h3>${t(sel.title)}</h3>` +
     `<p>${t(sel.body)}</p>`;
+}
+
+/* ---- Voltage traces (SVG) ------------------------------------------------ */
+// Draw a stacked three-cell voltage plot into an SVG string. Shared vertical
+// scale across cells so spike heights are comparable, like the reference figure.
+function traceSvg(block, cells, scaleBarMv) {
+  const s = block.series;
+  const W = 620, laneH = 90, gap = 10, padL = 62, padR = 16, padT = 8, padB = 26;
+  const H = padT + cells.length * laneH + (cells.length - 1) * gap + padB;
+
+  const tMin = s.t[0], tMax = s.t[s.t.length - 1];
+  let vMin = Infinity, vMax = -Infinity;
+  for (const c of cells) for (const v of s[c.key]) { if (v < vMin) vMin = v; if (v > vMax) vMax = v; }
+  const vPad = (vMax - vMin) * 0.06;
+  vMin -= vPad; vMax += vPad;
+
+  const xOf = (t) => padL + ((t - tMin) / (tMax - tMin)) * (W - padL - padR);
+  const laneTop = (i) => padT + i * (laneH + gap);
+  const yOf = (v, i) => {
+    const top = laneTop(i), bot = top + laneH;
+    return bot - ((v - vMin) / (vMax - vMin)) * (bot - top);
+  };
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="trace-svg" preserveAspectRatio="xMidYMid meet">`;
+
+  cells.forEach((c, i) => {
+    const top = laneTop(i), bot = top + laneH;
+    svg += `<line x1="${padL}" y1="${bot}" x2="${W - padR}" y2="${bot}" class="trace-axis"/>`;
+    svg += `<text x="${padL - 10}" y="${(top + bot) / 2}" class="trace-cell-label" text-anchor="end" dominant-baseline="middle">${c.label}</text>`;
+    const arr = s[c.key];
+    let d = '';
+    for (let k = 0; k < arr.length; k++) {
+      const x = xOf(s.t[k]).toFixed(1);
+      const y = yOf(arr[k], i).toFixed(1);
+      d += (k === 0 ? 'M' : 'L') + x + ' ' + y + ' ';
+    }
+    svg += `<path d="${d.trim()}" class="trace-path" fill="none"/>`;
+  });
+
+  const barPxPerMv = laneH / (vMax - vMin);
+  const barLen = scaleBarMv * barPxPerMv;
+  const barX = padL + 8, barTop = laneTop(0) + 6;
+  svg += `<line x1="${barX}" y1="${barTop}" x2="${barX}" y2="${barTop + barLen}" class="trace-scalebar"/>`;
+  svg += `<text x="${barX + 6}" y="${barTop + barLen / 2}" class="trace-scale-label" dominant-baseline="middle">${scaleBarMv} mV</text>`;
+
+  const tAxisY = H - 8;
+  svg += `<text x="${padL}" y="${tAxisY}" class="trace-time-label">0</text>`;
+  svg += `<text x="${W - padR}" y="${tAxisY}" class="trace-time-label" text-anchor="end">${Math.round(tMax)} ms</text>`;
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function renderTraceBlock(container, block) {
+  const wrap = el('div', 'trace-block');
+  wrap.appendChild(el('h4', 'trace-title', t(block.title)));
+  const fig = el('div', 'trace-figure');
+  fig.innerHTML = traceSvg(block, traceData.cells, traceData.scaleBarMv);
+  wrap.appendChild(fig);
+  wrap.appendChild(el('p', 'trace-caption', t(block.caption)));
+  const prov = `v${block.version} · ${String(block.gitSha).slice(0, 7)} · noise ${block.noise}` +
+    (block.collapseParam ? ` · ${block.collapseParam} logfactor ${block.logfactor}` : '');
+  wrap.appendChild(el('p', 'trace-prov', prov));
+  container.innerHTML = '';
+  container.appendChild(wrap);
+}
+
+function renderTraces() {
+  if (!traceData) return;
+  // Reference rhythm at the top (below the primer)
+  const refTop = document.getElementById('trace-reference');
+  if (refTop) renderTraceBlock(refTop, traceData.reference);
+
+  // Intact-vs-collapsed contrast further down
+  const h2 = document.getElementById('trace-contrast-h2');
+  if (h2) h2.textContent = t(UI.trace_contrast_h2);
+  const note = document.getElementById('trace-contrast-note');
+  if (note) note.textContent = t(traceData.contrastNote);
+  const refPair = document.getElementById('trace-ref-pair');
+  const colPair = document.getElementById('trace-col-pair');
+  if (refPair) renderTraceBlock(refPair, traceData.reference);
+  if (colPair) renderTraceBlock(colPair, traceData.collapsed);
 }
 
 /* ---- Timeline ------------------------------------------------------------ */
@@ -446,8 +536,22 @@ function wireLanguageButtons() {
     timelineData = timeline;
     contrastData = contrast;
     loopData = loop;
+
+    // Voltage traces are optional — load separately so a missing file
+    // never blocks the rest of the page.
+    try {
+      traceData = await loadJSON('data/h6_traces.json');
+    } catch (e) {
+      traceData = null;
+      // hide the trace sections if no data
+      ['trace-intro', 'trace-contrast'].forEach(id => {
+        const n = document.getElementById(id);
+        if (n) n.style.display = 'none';
+      });
+    }
+
     renderContrast(contrast);
-    applyLanguage();     // renders timeline + primer + loop + static strings in EN
+    applyLanguage();     // renders timeline + primer + loop + traces + static strings in EN
   } catch (err) {
     document.getElementById('timeline').innerHTML =
       `<p style="color:#a23b2d">Error loading data: ${err.message}<br>` +
