@@ -28,6 +28,7 @@ const VERDICT_DIR = path.join(REPO_ROOT, 'core', 'results', 'verdicts');
 const TRACE_DIR   = path.join(REPO_ROOT, 'core', 'results', 'traces');
 const OUT_DIR     = path.join(__dirname, 'data');
 const SRC_OUT_DIR = path.join(OUT_DIR, 'sources');
+const TRACE_OUT_DIR = path.join(OUT_DIR, 'traces');
 
 // GitHub repo coordinates for permalinks.
 const GH_OWNER = 'Realchange';
@@ -92,6 +93,13 @@ function publishedPath(file) {
 }
 function permalink(file) {
   return `https://github.com/${GH_OWNER}/${GH_REPO}/blob/${GH_REF}/${publishedPath(file)}`;
+}
+// Trace CSVs are published under docs/data/traces/ (not sources/).
+function tracePublishedPath(file) {
+  return `docs/data/traces/${file}`;
+}
+function tracePermalink(file) {
+  return `https://github.com/${GH_OWNER}/${GH_REPO}/blob/${GH_REF}/${tracePublishedPath(file)}`;
 }
 
 // --- Curated station metadata (prose human-authored EN+DE; numbers injected) -
@@ -587,6 +595,8 @@ function buildTraces() {
       gitSha: ref.meta.gitSha,
       noise: ref.meta.noise,
       durationMs: Number(ref.meta.durationMs),
+      sourceFile: tracePublishedPath(refFile),
+      permalink: tracePermalink(refFile),
       title: {
         en: 'Intact reference rhythm',
         de: 'Intakter Referenzrhythmus',
@@ -609,6 +619,8 @@ function buildTraces() {
       collapseParam: col.meta.collapse,       // e.g. "abpd.gKd"
       logfactor: Number(col.meta.logfactor),  // e.g. -2
       collapsed: col.meta.collapsed === 'true',
+      sourceFile: tracePublishedPath(colFile),
+      permalink: tracePermalink(colFile),
       title: {
         en: 'Collapsed rhythm (gKd strongly reduced)',
         de: 'Kollabierter Rhythmus (gKd stark reduziert)',
@@ -672,7 +684,12 @@ function main() {
   if (fs.existsSync(refCsv) && fs.existsSync(colCsv)) {
     const traces = buildTraces();
     fs.writeFileSync(path.join(OUT_DIR, 'h6_traces.json'), JSON.stringify(traces));
-    traceInfo = `${traces.reference.series.t.length} + ${traces.collapsed.series.t.length} samples`;
+    // Publish the raw CSVs verbatim (full transparency, like the verdict sources).
+    fs.mkdirSync(TRACE_OUT_DIR, { recursive: true });
+    fs.copyFileSync(refCsv, path.join(TRACE_OUT_DIR, 'reference.csv'));
+    fs.copyFileSync(colCsv, path.join(TRACE_OUT_DIR, 'collapsed.csv'));
+    traceInfo = `${traces.reference.series.t.length} + ${traces.collapsed.series.t.length} samples, ` +
+      `2 CSVs published`;
   }
 
   console.log('Reader-site export complete (bilingual EN/DE):');

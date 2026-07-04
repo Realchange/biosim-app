@@ -98,6 +98,10 @@ const UI = {
     en: 'What "collapse" actually looks like',
     de: 'Wie ein „Kollaps" tatsächlich aussieht',
   },
+  trace_csv: {
+    en: '\u2197 raw data (CSV) on GitHub',
+    de: '\u2197 Rohdaten (CSV) auf GitHub',
+  },
   build_meta: { en: 'Export', de: 'Export' },
   primer_guide_label: '',   // handled inside primer HTML
 };
@@ -340,6 +344,14 @@ function renderTraceBlock(container, block) {
   const prov = `v${block.version} · ${String(block.gitSha).slice(0, 7)} · noise ${block.noise}` +
     (block.collapseParam ? ` · ${block.collapseParam} logfactor ${block.logfactor}` : '');
   wrap.appendChild(el('p', 'trace-prov', prov));
+  if (block.permalink) {
+    const link = el('a', 'trace-csv-link');
+    link.href = block.permalink;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.innerHTML = `<span>${t(UI.trace_csv)}</span><span class="path">${block.sourceFile}</span>`;
+    wrap.appendChild(link);
+  }
   container.innerHTML = '';
   container.appendChild(wrap);
 }
