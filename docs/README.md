@@ -45,6 +45,38 @@ python3 -m http.server 8000
    Branch: **main**, Folder: **/docs**.
 3. The page appears at `https://realchange.github.io/biosim-app/`.
 
+## Terminology (EN ↔ DE)
+
+The reader prose deliberately avoids the word "tempo" in both languages. Keep these
+fixed equivalents consistent across the page, and use the same mapping in any future
+German version or summary of the paper, so the site and the paper agree:
+
+| Concept | English | German |
+|---|---|---|
+| speed of the cycle (pace, not pattern) | pace | Takt |
+| the pacemaker element / kernel | pacemaker | Taktgeber |
+| the shape of the rhythm | pattern | Muster |
+| the AI's judgement on a hypothesis | verdict | Urteil (Verdikt) |
+| a sharpened, testable assertion | claim | Behauptung (Claim) |
+| the compact set of numbers the AI reads | digest | Zahlenauszug (Digest) |
+| a series of measurements over a parameter | sweep | Messreihe (Sweeps) |
+| the quantity being measured | metric | Messgröße (Metrik) |
+| open to disproof (Popper) | falsifiable | widerlegbar (falsifizierbar) |
+| where a result came from | provenance | Herkunft |
+
+The paper's own contrast is "pace vs. pattern"; its German equivalent is
+"Takt vs. Muster". Note "Takt" means the pace here, not a single beat/period — where
+that could be misread, use "Geschwindigkeit des Rhythmus" instead.
+
+**Plain-word convention for jargon.** For a lay audience the reader page leads with an
+everyday German word and keeps the technical term in parentheses — e.g. "Urteil
+(Verdikt)", "Behauptung (Claim)", "Messreihe (Sweeps)". This keeps the page readable
+without discarding the term a specialist would look for in the paper. When adding new
+stations, follow the same pattern for any term a non-specialist would not immediately
+know. English field names that appear verbatim in the data (e.g. `slopeNearZero`,
+`collapsedFraction`) are shown as-is under the plain-word column heading, not
+translated.
+
 ## Extending
 
 The timeline and contrast are data-driven, so later additions (the loop view
