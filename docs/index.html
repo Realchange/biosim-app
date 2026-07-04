@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BIOSIM — H6: An AI that corrects its own thinking</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div class="lang-switch" role="group" aria-label="Language">
+    <button id="lang-en" class="active" type="button">EN</button>
+    <button id="lang-de" type="button">DE</button>
+  </div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="eyebrow"></p>
+      <h1 data-i18n="h1"></h1>
+      <p class="lede" data-i18n="lede"></p>
+      <p class="meta" id="build-meta"></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="primer" aria-label="Overview">
+      <div class="primer-card" id="primer-card"></div>
+    </section>
+
+    <section id="loop" class="loop" aria-label="The loop">
+      <h2 id="loop-title"></h2>
+      <p id="loop-intro" class="loop-intro"></p>
+      <div class="loop-layout">
+        <div id="loop-diagram" class="loop-diagram"></div>
+        <div id="loop-detail" class="loop-detail"></div>
+      </div>
+      <p id="loop-footnote" class="loop-footnote"></p>
+    </section>
+
+    <section id="timeline" class="timeline" aria-label="H6 timeline"></section>
+
+    <section id="contrast" class="contrast" aria-label="The core contrast">
+      <h2 data-i18n="contrast_h2"></h2>
+      <p class="contrast-intro" data-i18n="contrast_intro1"></p>
+      <p class="contrast-intro" data-i18n="contrast_intro2"></p>
+      <p id="contrast-caption" class="caption"></p>
+      <div class="toggle" role="group" aria-label="Switch view">
+        <button id="btn-slope" class="active" type="button" data-i18n="btn_slope"></button>
+        <button id="btn-collapse" type="button" data-i18n="btn_collapse"></button>
+      </div>
+      <table id="contrast-table" class="data-table">
+        <thead>
+          <tr>
+            <th><span data-i18n="col_control"></span><span class="th-sub">Leitfähigkeit</span></th>
+            <th><span data-i18n="col_effect"></span><span class="th-sub">slopeNearZero</span></th>
+            <th id="th-dynamic"><span data-i18n="col_collapse"></span><span class="th-sub">collapsedFraction</span></th>
+            <th data-i18n="col_reading"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="contrast-provenance" class="provenance"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p class="footer-plain" data-i18n="footer_plain"></p>
+      <p class="footer-tech" data-i18n="footer_tech"></p>
+    </div>
+  </footer>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

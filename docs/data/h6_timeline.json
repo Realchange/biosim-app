@@ -1,0 +1,195 @@
+{
+  "generatedAt": "2026-07-04T08:13:31.281Z",
+  "hypothesisId": "h6-period-control",
+  "title": {
+    "en": "H6 — cycle-period control: two autonomous self-corrections",
+    "de": "H6 — Zyklusperioden-Kontrolle: zwei autonome Selbstkorrekturen"
+  },
+  "stations": [
+    {
+      "id": "round1",
+      "kind": "round",
+      "title": {
+        "en": "Round 1 — H6 stated and refuted",
+        "de": "Runde 1 — H6 aufgestellt und widerlegt"
+      },
+      "subtitle": {
+        "en": "Wide measurement series (sweeps) across six orders of magnitude",
+        "de": "Weite Messreihen (Sweeps) über sechs Größenordnungen"
+      },
+      "plainQuestion": {
+        "en": "Is there a single pacemaker?",
+        "de": "Gibt es den einen Taktgeber?"
+      },
+      "version": "0.59",
+      "gitSha": "490faa4",
+      "interpreter": "anthropic",
+      "hypothesis": {
+        "en": "There is one decisive control that sets the pace of the rhythm: turning it changes the pace noticeably, while all other controls have little effect.",
+        "de": "Es gibt den einen entscheidenden Regler, der den Takt des Rhythmus bestimmt: Dreht man an ihm, ändert sich der Takt deutlich; alle anderen Regler haben kaum Einfluss."
+      },
+      "verdict": "refuted",
+      "explanation": {
+        "en": "To test the guess, the system turns each control across a very wide range and watches how much the rhythm changes each time. The result is surprising: the very control one would have expected to be the main pacemaker turns out to be the weakest — and others thought unimportant turn out strongest. So the guess of \"a single pacemaker\" is refuted, for now. The system names a new suspect (a control called gKd) — but this result rests on shaky ground, as the next station shows.",
+        "de": "Um die Vermutung zu prüfen, dreht das System bei jedem Regler über einen sehr weiten Bereich und schaut, wie stark sich der Rhythmus jeweils ändert. Das Ergebnis ist überraschend: Ausgerechnet der Regler, den man für den Haupt-Taktgeber gehalten hätte, wirkt am schwächsten — und andere, die man für unwichtig hielt, wirken am stärksten. Die Vermutung „ein einziger Taktgeber\" ist damit erst einmal widerlegt. Das System benennt einen neuen Verdächtigen (einen Regler namens gKd) — doch dieses Ergebnis steht auf wackligem Boden, wie die nächste Station zeigt."
+      },
+      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T14-08-07-460Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/490faa4/core/results/verdicts/h6-period-control-2026-06-28T14-08-07-460Z.json",
+      "refinedClaim": {
+        "en": "A single control does not pace the rhythm across the board. The sharper follow-up claim names one specific control (gKd) as the strongest candidate — to be put to a stricter test in the next round.",
+        "de": "Ein einzelner Regler taktet den Rhythmus nicht auf ganzer Linie. Die geschärfte Nachfolge-Behauptung (Claim) benennt einen bestimmten Regler (gKd) als stärksten Kandidaten — der in der nächsten Runde einer strengeren Prüfung unterzogen wird."
+      }
+    },
+    {
+      "id": "correction1",
+      "kind": "correction",
+      "title": {
+        "en": "Self-correction 1 — the experiment design",
+        "de": "Selbstkorrektur 1 — das Experiment-Design"
+      },
+      "subtitle": {
+        "en": "Saturation spotted → narrow, high-resolution sweeps",
+        "de": "Sättigung erkannt → schmale, hochauflösende Messreihen"
+      },
+      "plainQuestion": {
+        "en": "Was the measurement even meaningful?",
+        "de": "War die Messung überhaupt aussagekräftig?"
+      },
+      "version": "0.59",
+      "gitSha": "490faa4",
+      "interpreter": "anthropic",
+      "explanation": {
+        "en": "Before trusting the round-1 result, the system checks how it came about — and finds a flaw in its own procedure. Picture it this way: the controls had been turned across far too wide a range, so wide that the measuring instrument only ever showed \"full deflection\". But if the instrument is permanently pinned at its maximum, fine differences between the controls can no longer be seen — which partly distorted the ranking. Crucially, the system does not change its result, it changes its procedure. It repeats the measurement at much finer settings, within a narrow range where the instrument gives meaningful values again.",
+        "de": "Bevor das System dem Ergebnis aus Runde 1 traut, prüft es, wie es zustande kam — und findet einen Fehler im eigenen Vorgehen. Bildlich gesprochen: Man hatte die Regler über einen viel zu großen Bereich verdreht, so weit, dass das Messgerät nur noch „Vollausschlag\" anzeigte. Wenn das Messgerät aber ständig am Anschlag steht, kann man feine Unterschiede zwischen den Reglern gar nicht mehr erkennen — das Ranking war dadurch teilweise verzerrt. Wichtig: Das System ändert nicht sein Ergebnis, sondern sein Vorgehen. Es wiederholt die Messung mit viel feinerer Einstellung, in einem engen Bereich, in dem das Messgerät wieder sinnvolle Werte liefert."
+      },
+      "note": {
+        "en": "This is the first of two self-corrections — here the AI repairs the experiment. This kind of correction could also be done by a fixed rule; the second one (station 4) could not.",
+        "de": "Dies ist die erste von zwei Selbstkorrekturen — hier repariert die KI das Experiment. Diese Art Korrektur könnte auch eine feste Regel leisten; die zweite (Station 4) nicht."
+      }
+    },
+    {
+      "id": "round2_raw",
+      "kind": "round",
+      "title": {
+        "en": "Round 2 (raw) — collapse mistaken for control",
+        "de": "Runde 2 (roh) — Kollaps als Kontrolle missdeutet"
+      },
+      "subtitle": {
+        "en": "Before the metric revision (v0.60)",
+        "de": "Vor der Überarbeitung der Messgröße (Metrik) (v0.60)"
+      },
+      "plainQuestion": {
+        "en": "Two controls look strong — but why?",
+        "de": "Zwei Regler sehen stark aus — aber warum?"
+      },
+      "version": "0.60",
+      "gitSha": "490faa4",
+      "interpreter": "anthropic",
+      "explanation": {
+        "en": "With the finer measurement, two controls (gKd and gCaS) now look especially strong. The instrument shows a powerful effect for both. But here lurks the next trap: a powerful effect can mean two things. Either the control shifts the pace smoothly and in a controlled way — or it strangles the rhythm entirely. On the instrument, both look the same at first. The instrument of the time could only tell \"rhythm there or not there\" and so conflated these two completely different things. Exactly this error is uncovered in the next station.",
+        "de": "Mit der feineren Messung sehen jetzt zwei Regler (gKd und gCaS) besonders stark aus. Das Messgerät zeigt für beide einen kräftigen Effekt. Doch hier lauert die nächste Falle: Ein kräftiger Effekt kann zweierlei bedeuten. Entweder verschiebt der Regler den Takt sauber und kontrolliert — oder er würgt den Rhythmus ganz ab. Beides sieht auf dem Messgerät zunächst gleich aus. Das damalige Messgerät konnte nur „Rhythmus da oder nicht da\" unterscheiden und vermischte deshalb diese zwei völlig verschiedenen Dinge. Genau dieser Fehler wird in der nächsten Station aufgedeckt."
+      },
+      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T15-08-28-085Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/490faa4/core/results/verdicts/h6-period-control-2026-06-28T15-08-28-085Z.json"
+    },
+    {
+      "id": "correction2",
+      "kind": "correction",
+      "title": {
+        "en": "Self-correction 2 — the measuring instrument itself",
+        "de": "Selbstkorrektur 2 — das Messinstrument selbst"
+      },
+      "subtitle": {
+        "en": "A collapse measure (collapsedFraction) introduced as its own category",
+        "de": "Ein Kollaps-Maß (collapsedFraction) als eigene Kategorie eingeführt"
+      },
+      "plainQuestion": {
+        "en": "Is the instrument even measuring the right thing?",
+        "de": "Misst das Messgerät überhaupt das Richtige?"
+      },
+      "version": "0.65",
+      "gitSha": "85f8394",
+      "interpreter": "anthropic",
+      "explanation": {
+        "en": "This is the decisive moment of the whole study. The system recognises: the flaw is not in the experiment but in the measuring instrument itself. Strangling a rhythm is something fundamentally different from finely adjusting its pace — but the old instrument threw both into one pot. So the system rebuilds its own instrument: it introduces a new quantity that specifically records whether the rhythm collapses (in technical terms \"collapsedFraction\"). A collapsed rhythm now counts as its own category and no longer as a \"strong change of pace\". Because every earlier result was stored with full provenance, the system can simply re-evaluate the same round-2 measurements with the improved instrument — and the result flips. This is exactly what a simple fixed rule could not do: not merely measure better, but question its own method of measuring.",
+        "de": "Dies ist der entscheidende Moment der ganzen Studie. Das System erkennt: Der Fehler liegt nicht im Experiment, sondern im Messgerät selbst. Einen Rhythmus abzuwürgen ist etwas grundlegend anderes, als seinen Takt fein zu justieren — aber das alte Messgerät warf beides in einen Topf. Also baut das System sein eigenes Messgerät um: Es führt eine neue Größe ein, die eigens erfasst, ob der Rhythmus zusammenbricht (im Fachbegriff „collapsedFraction\"). Ein zusammengebrochener Rhythmus zählt nun als eigene Kategorie und nicht länger als „starke Takt-Änderung\". Weil jedes frühere Ergebnis mit vollständiger Herkunft gespeichert wurde, kann das System dieselben Messungen aus Runde 2 einfach noch einmal mit dem verbesserten Messgerät bewerten — und das Ergebnis kippt. Genau das ist es, was eine simple feste Regel nicht könnte: nicht bloß besser messen, sondern die eigene Messmethode in Frage stellen."
+      },
+      "note": {
+        "en": "This is the second self-correction and the actual heart of the project: the AI doubts not its result but its own measuring instrument — and finds that a high value meant \"strangling\", not \"steering\".",
+        "de": "Dies ist die zweite Selbstkorrektur und der eigentliche Kern des Projekts: Die KI zweifelt nicht am Ergebnis, sondern an ihrem eigenen Messinstrument — und stellt fest, dass ein hoher Wert „Abwürgen\" bedeutete, nicht „Steuern\"."
+      }
+    },
+    {
+      "id": "round3",
+      "kind": "round",
+      "title": {
+        "en": "Round 3 — a distributed mechanism (several controls together)",
+        "de": "Runde 3 — ein verteilter Mechanismus (mehrere Regler zusammen)"
+      },
+      "subtitle": {
+        "en": "Collapse-aware measurement (v0.65), direction-free test",
+        "de": "Kollaps-bewusste Messgröße (Metrik) (v0.65), richtungsfreier Test"
+      },
+      "plainQuestion": {
+        "en": "So — is there a single pacemaker after all?",
+        "de": "Also — gibt es nun den einen Taktgeber?"
+      },
+      "version": "0.65",
+      "gitSha": "85f8394",
+      "interpreter": "anthropic",
+      "verdict": "refuted",
+      "explanation": {
+        "en": "With the improved instrument the picture becomes clear. The two controls that previously looked like strong pacemakers (gKd and gCaS) are in truth no such thing — they only look so strong because they strangle the rhythm. They are therefore vital for a rhythm to exist at all, but they do not steer its pace. Two other controls (gCaT and gKCa) shift the pace cleanly, without breaking anything. An additional test in all directions confirms it: there is no single dominant pacemaker. The final result is therefore: the pace of the rhythm is not set by one single control, but by several together — it is spread across many shoulders.",
+        "de": "Mit dem verbesserten Messgerät wird das Bild klar. Die zwei Regler, die vorher wie starke Taktgeber aussahen (gKd und gCaS), sind in Wahrheit gar keine — sie wirken nur deshalb so stark, weil sie den Rhythmus abwürgen. Sie sind also lebenswichtig dafür, dass überhaupt ein Rhythmus da ist, aber sie steuern nicht seinen Takt. Zwei andere Regler (gCaT und gKCa) verschieben den Takt dagegen sauber, ohne etwas kaputtzumachen. Ein zusätzlicher Test in alle Richtungen bestätigt: Es gibt keinen einzelnen dominierenden Taktgeber. Das Endergebnis lautet daher: Der Takt des Rhythmus wird nicht von einem einzigen Regler bestimmt, sondern von mehreren gemeinsam — es ist auf viele Schultern verteilt."
+      },
+      "plainMetricsIntro": {
+        "en": "The four controls examined, at a glance. Red = only acts by strangling the rhythm (not a real pacemaker). Green = genuinely steers the pace cleanly.",
+        "de": "Die vier untersuchten Regler auf einen Blick. Rot = wirkt nur, weil es den Rhythmus abwürgt (kein echter Taktgeber). Grün = steuert den Takt tatsächlich sauber."
+      },
+      "keyMetrics": {
+        "gKd": {
+          "slopeNearZero": 14.483,
+          "collapsedFraction": 0.804,
+          "reading": {
+            "en": "strangles the rhythm",
+            "de": "würgt den Rhythmus ab"
+          }
+        },
+        "gCaS": {
+          "slopeNearZero": 15.205,
+          "collapsedFraction": 0.686,
+          "reading": {
+            "en": "strangles the rhythm",
+            "de": "würgt den Rhythmus ab"
+          }
+        },
+        "gCaT": {
+          "slopeNearZero": 7.122,
+          "collapsedFraction": 0,
+          "reading": {
+            "en": "steers the pace cleanly",
+            "de": "steuert den Takt sauber"
+          }
+        },
+        "gKCa": {
+          "slopeNearZero": 4.036,
+          "collapsedFraction": 0,
+          "reading": {
+            "en": "steers the pace cleanly",
+            "de": "steuert den Takt sauber"
+          }
+        },
+        "randomDirections": {
+          "meanDistanceAligned": 1.158,
+          "meanDistanceMisaligned": 1.07
+        }
+      },
+      "sourceFile": "core/results/verdicts/h6-period-control-2026-06-28T17-55-14-317Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/85f8394/core/results/verdicts/h6-period-control-2026-06-28T17-55-14-317Z.json",
+      "refinedClaim": {
+        "en": "Among the controls tested, gCaT and gKCa are the best candidates for smooth pace control (both show a real effect with no collapse at all), with gCaT the strongest of them. The controls that looked strongest (gKd, gCaS) are necessary for the rhythm to exist but do not steer its pace. Cycle period is thus controlled in a distributed way, not by a single pacemaker — a claim that remains open to disproof (falsifiable) by a wide, collapse-free test of gCaT.",
+        "de": "Unter den geprüften Reglern sind gCaT und gKCa die besten Kandidaten für eine sanfte Takt-Steuerung (beide zeigen einen echten Effekt ganz ohne Zusammenbruch), wobei gCaT der stärkste von ihnen ist. Die scheinbar stärksten Regler (gKd, gCaS) sind notwendig dafür, dass überhaupt ein Rhythmus existiert, steuern aber nicht seinen Takt. Der Takt wird somit verteilt gesteuert, nicht von einem einzelnen Taktgeber — eine Aussage, die durch einen breiten, kollaps-freien Test von gCaT widerlegbar (falsifizierbar) bleibt."
+      }
+    }
+  ]
+}

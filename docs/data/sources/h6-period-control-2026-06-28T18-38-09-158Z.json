@@ -1,0 +1,108 @@
+{
+  "hypothesisId": "h6-period-control",
+  "summary": "The refined claim is that abpd.gCaT is the strongest smooth tempo controller among abpd conductances (slopeNearZero 7.122, no collapse in ±0.5 range), while abpd.gKCa is weaker (4.036, no collapse). We now test this with direction-resolved sweeps of abpd.gCaT (increase vs decrease separately, narrow and wide) to confirm monotonic period shift without collapse, compare against abpd.gKCa in matched conditions, and probe whether phase pattern is preserved throughout. We also check whether lp or py conductances (e.g. lp.gCaT) could outperform abpd.gCaT as tempo controllers.",
+  "distance": "period",
+  "digest": {
+    "hypothesisId": "h6-period-control",
+    "metricKind": "period",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaT",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 8.374,
+          "maxDistance": 0.61,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaT",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 5.682,
+          "maxDistance": 0.693,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKCa",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 4.208,
+          "maxDistance": 0.834,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKCa",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 4.358,
+          "maxDistance": 0.351,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaT",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 5.941,
+          "maxDistance": 0.693,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep lp.gCaT",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 2.705,
+          "maxDistance": 0.934,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gH",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 3.661,
+          "maxDistance": 0.971,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=0.3 n=200",
+        "metrics": {
+          "meanDistanceAligned": 1.057,
+          "meanDistanceMisaligned": 1.064,
+          "fractionAligned": 0.758,
+          "fractionMisaligned": 0.727
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "refuted",
+    "evidence": "The hypothesis made two core claims: (1) abpd.gCaT is the STRONGEST smooth tempo controller among abpd conductances, and (2) abpd.gKCa is weaker. The new sweeps partially support claim (2) — abpd.gKCa slopes are 4.208 and 4.358, both below the abpd.gCaT slopes of 8.374, 5.682, and 5.941 — so gCaT does outperform gKCa in sensitivity near baseline. However, claim (1) — that abpd.gCaT is the strongest controller overall — is refuted: abpd.gH was not tested in the original hypothesis but here scores slopeNearZero=3.661 (weaker), yet lp.gCaT was included and scores 2.705 (weaker still), so those do not challenge supremacy. But the critical issue is that the randomDirections experiment (r=0.3, n=200) shows meanDistanceAligned=1.057 vs meanDistanceMisaligned=1.064, with fractionAligned=0.758 vs fractionMisaligned=0.727 — essentially no directional preference. This means period perturbations are NOT strongly axis-aligned with abpd.gCaT; the period landscape is diffuse rather than dominated by a single conductance axis. Furthermore, all thresholdCrossed=0 across every sweep, meaning toleratedRadius=0.5 is merely the test boundary (a lower bound), so the 'no collapse in ±0.5 range' confirmation is vacuous — the threshold was never crossed and we cannot confirm controlled modulation vs. simply a bounded test. The prior slopeNearZero of 7.122 cited in the hypothesis is not reproduced exactly (new values: 8.374, 5.682, 5.941), suggesting directional asymmetry — increasing vs. decreasing gCaT have different slopes (8.374 vs 5.682 or 5.941), partially refuting the claim of clean symmetric monotonic control. The randomDirections result is the strongest refutation: if abpd.gCaT were the dominant tempo controller, aligned perturbations should yield substantially higher distances than misaligned ones, but 1.057 vs 1.064 (difference <1%) shows no such dominance.",
+    "refinedClaim": "abpd.gCaT is a smooth tempo modulator (collapsedFraction=0 across all sweeps, slopeNearZero 5.7–8.4) and outperforms abpd.gKCa (slopes 4.2–4.4) and lp.gCaT (2.7) in near-baseline period sensitivity, but it does NOT dominate the period-control landscape as a single axis: random-direction sweeps show aligned vs. misaligned period distances differ by <1% (1.057 vs 1.064), indicating that period is controlled by a distributed, multi-conductance mechanism rather than by abpd.gCaT alone. A falsifiable sharper claim: a multivariate sweep simultaneously varying abpd.gCaT and abpd.gKCa will show that the principal axis of period variation lies closer to the abpd.gCaT direction than any single other abpd conductance axis, but will still require at least one additional conductance (e.g., gH or gKCa) to explain >50% of period variance."
+  },
+  "provenance": {
+    "codeVersion": "0.65",
+    "gitSha": "85f8394",
+    "interpreter": "anthropic"
+  }
+}

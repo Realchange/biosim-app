@@ -1,0 +1,92 @@
+{
+  "hypothesisId": "h6-period-control",
+  "summary": "Test whether a single intrinsic conductance (candidate: abpd.gH or abpd.gCaS as pacemaker) dominates cycle period while preserving phase pattern. We sweep candidate pacemaker conductances and compare period-distance vs phase-distance, then sweep non-pacemaker conductances as controls, and use random directions to characterize the global landscape.",
+  "distance": "period",
+  "digest": {
+    "hypothesisId": "h6-period-control",
+    "metricKind": "period",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gH",
+        "metrics": {
+          "toleratedRadius": 1,
+          "slopeNearZero": 1.701,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaS",
+        "metrics": {
+          "toleratedRadius": 0.1,
+          "slopeNearZero": 12.689,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gNa",
+        "metrics": {
+          "toleratedRadius": 0.3,
+          "slopeNearZero": 2.214,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep lp.gH",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 1.053,
+          "maxDistance": 3.503
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKd",
+        "metrics": {
+          "toleratedRadius": 0.1,
+          "slopeNearZero": 13.874,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gA",
+        "metrics": {
+          "toleratedRadius": 0.2,
+          "slopeNearZero": 5.774,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=2 n=200",
+        "metrics": {
+          "meanDistanceAligned": 2.576,
+          "meanDistanceMisaligned": 2.542,
+          "fractionAligned": 0.121,
+          "fractionMisaligned": 0.091
+        }
+      },
+      {
+        "kind": "knockout",
+        "label": "knockout abpd.gH+abpd.gCaS",
+        "metrics": {
+          "knockoutDistance": 3
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "refuted",
+    "evidence": "The hypothesis claims abpd.gH or abpd.gCaS is the dominant pacemaker conductance for cycle period while others serve as controls. The data refute this on two grounds. First, abpd.gH is not dominant: its slopeNearZero is only 1.701 and toleratedRadius is 1.0, making it the least period-sensitive of all abpd conductances tested. Second, the supposed 'non-pacemaker' conductances are at least as potent or more so: abpd.gKd has slopeNearZero=13.874 (toleratedRadius=0.1), abpd.gCaS has slopeNearZero=12.689 (toleratedRadius=0.1), and abpd.gA has slopeNearZero=5.774 (toleratedRadius=0.2), all exceeding abpd.gH. Even lp.gH (slope=1.053) is comparable to abpd.gH. The random-directions data show meanDistanceAligned=2.576 vs meanDistanceMisaligned=2.542 and fractionAligned=0.121 vs fractionMisaligned=0.091—essentially no directional preference aligned with any single conductance axis, indicating the period landscape is not dominated by a single direction. The knockout of both abpd.gH+abpd.gCaS together only reaches distance=3 (the apparent maximum), suggesting even their combined removal does not uniquely collapse period in a distinctive way beyond the generic maximum. The data therefore refute single-conductance dominance by abpd.gH and are inconsistent with abpd.gCaS being uniquely dominant given abpd.gKd is equally or more sensitive.",
+    "refinedClaim": "A falsifiable sharper claim supported by the data: abpd.gKd is the single strongest per-unit-displacement period controller in the abpd compartment (slopeNearZero=13.874, toleratedRadius=0.1), followed closely by abpd.gCaS (12.689); this claim is falsifiable by showing that equal-magnitude perturbations to abpd.gKd do not produce larger period changes than perturbations to other conductances, or by demonstrating that the high slope reflects a nonlinearity local to zero rather than global dominance."
+  },
+  "provenance": {
+    "codeVersion": "0.59",
+    "gitSha": "490faa4",
+    "interpreter": "anthropic"
+  }
+}

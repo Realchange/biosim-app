@@ -1,0 +1,105 @@
+{
+  "hypothesisId": "h6-period-control",
+  "summary": "The prior refined claim is that abpd.gKd has the strongest per-unit-displacement period control (slopeNearZero=13.874) globally, not just locally near zero. We now test falsifiability by: (1) narrow high-resolution sweeps of abpd.gKd in reduction and increase directions separately to distinguish local nonlinearity from global dominance, (2) equally narrow sweeps of abpd.gCaS and abpd.gA for direct comparison at matched displacement magnitudes, (3) narrow sweep of abpd.gKCa (untested so far) as a potential rival, (4) a narrow sweep of abpd.gCaT (also untested), (5) a ratio experiment pitting abpd.gKd increase against abpd.gCaS increase simultaneously to check whether they are redundant or synergistic, and (6) a randomDirections probe at a small radius to measure the true local period gradient direction.",
+  "distance": "period",
+  "digest": {
+    "hypothesisId": "h6-period-control",
+    "metricKind": "period",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKd",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 28.596,
+          "maxDistance": 0.859,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKd",
+        "metrics": {
+          "toleratedRadius": 0.093,
+          "slopeNearZero": 14.483,
+          "maxDistance": 3,
+          "collapsedFraction": 0.804,
+          "thresholdCrossed": 1
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaS",
+        "metrics": {
+          "toleratedRadius": 0.046,
+          "slopeNearZero": 15.205,
+          "maxDistance": 3,
+          "collapsedFraction": 0.686,
+          "thresholdCrossed": 1
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKCa",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 4.036,
+          "maxDistance": 0.834,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaT",
+        "metrics": {
+          "toleratedRadius": 0.5,
+          "slopeNearZero": 7.122,
+          "maxDistance": 0.692,
+          "collapsedFraction": 0,
+          "thresholdCrossed": 0
+        }
+      },
+      {
+        "kind": "ratio",
+        "label": "ratio abpd.gKd/abpd.gCaS",
+        "metrics": {
+          "toleratedRadius": 0.046,
+          "slopeNearZero": 12.933,
+          "maxDistance": 3,
+          "collapsedFraction": 0.667,
+          "thresholdCrossed": 1
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=0.3 n=150",
+        "metrics": {
+          "meanDistanceAligned": 1.158,
+          "meanDistanceMisaligned": 1.07,
+          "fractionAligned": 0.72,
+          "fractionMisaligned": 0.74
+        }
+      },
+      {
+        "kind": "knockout",
+        "label": "knockout abpd.gKd",
+        "metrics": {
+          "knockoutDistance": 3,
+          "collapsed": 1
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "refuted",
+    "evidence": "The hypothesis claims abpd.gKd has the strongest per-unit-displacement period control globally, not just locally. The data refute this on multiple grounds: (1) Asymmetric collapse: In the reduction direction, abpd.gKd has collapsedFraction=0.804 with toleratedRadius=0.093, meaning its high period-distance is driven by rhythm destruction, not smooth tempo control. In the increase direction it never crosses threshold (thresholdCrossed=0, maxDistance=0.859, collapsedFraction=0), showing weak global period influence when not collapsing. (2) abpd.gCaS matches or exceeds abpd.gKd's slopeNearZero in the collapse-driven direction (15.205 vs 14.483) with a similarly high collapsedFraction=0.686, meaning both are rhythmogenesis-necessary parameters, not tempo controllers. (3) The knockout confirms abpd.gKd is necessary for rhythm existence (collapsed=1), reinforcing that its period-distance reflects necessity for rhythmogenesis, not period modulation. (4) The randomDirections probe at r=0.3 shows fractionAligned=0.72 vs fractionMisaligned=0.74—misaligned directions are marginally MORE likely to cross threshold, meaning the abpd.gKd axis is not the dominant direction of the local period gradient. (5) abpd.gKCa (slopeNearZero=4.036, collapsedFraction=0, thresholdCrossed=0) and abpd.gCaT (slopeNearZero=7.122, collapsedFraction=0, thresholdCrossed=0) are weaker but are genuine period modulators with intact rhythm across the full tested range—they are better candidates for smooth tempo control. The original slopeNearZero=13.874 was a local artifact dominated by collapse onset, not global period control dominance.",
+    "refinedClaim": "abpd.gKd is necessary for rhythmogenesis (knockout collapses) but is NOT a genuine global period controller: its high period-distance slope reflects rhythm collapse, not smooth tempo modulation. A falsifiable refined claim: among abpd conductances tested, abpd.gCaT and abpd.gKCa are the best candidates for smooth period control (both show nonzero slopeNearZero with zero collapsedFraction across ±0.5 log-units), and abpd.gCaT's slopeNearZero (7.122) exceeds abpd.gKCa's (4.036), making abpd.gCaT the strongest smooth tempo controller. This is falsifiable by a wide bilateral sweep of abpd.gCaT at matched displacements confirming period shifts without collapse."
+  },
+  "provenance": {
+    "codeVersion": "0.65",
+    "gitSha": "85f8394",
+    "interpreter": "anthropic"
+  }
+}

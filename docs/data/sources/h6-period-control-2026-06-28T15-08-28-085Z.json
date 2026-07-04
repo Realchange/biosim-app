@@ -1,0 +1,89 @@
+{
+  "hypothesisId": "h6-period-control",
+  "summary": "The prior refined claim is that abpd.gKd has the strongest per-unit-displacement period control (slopeNearZero=13.874) globally, not just locally near zero. We now test falsifiability by: (1) narrow high-resolution sweeps of abpd.gKd in reduction and increase directions separately to distinguish local nonlinearity from global dominance, (2) equally narrow sweeps of abpd.gCaS and abpd.gA for direct comparison at matched displacement magnitudes, (3) narrow sweep of abpd.gKCa (untested so far) as a potential rival, (4) a narrow sweep of abpd.gCaT (also untested), (5) a ratio experiment pitting abpd.gKd increase against abpd.gCaS increase simultaneously to check whether they are redundant or synergistic, and (6) a randomDirections probe at a small radius to measure the true local period gradient direction.",
+  "distance": "period",
+  "digest": {
+    "hypothesisId": "h6-period-control",
+    "metricKind": "period",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKd",
+        "metrics": {
+          "slopeNearZero": 28.596,
+          "maxDistance": 0.859
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKd",
+        "metrics": {
+          "toleratedRadius": 0.1,
+          "slopeNearZero": 14.483,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaS",
+        "metrics": {
+          "toleratedRadius": 0.06,
+          "slopeNearZero": 15.205,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gKCa",
+        "metrics": {
+          "slopeNearZero": 4.036,
+          "maxDistance": 0.834
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep abpd.gCaT",
+        "metrics": {
+          "slopeNearZero": 7.122,
+          "maxDistance": 0.692
+        }
+      },
+      {
+        "kind": "ratio",
+        "label": "ratio abpd.gKd/abpd.gCaS",
+        "metrics": {
+          "toleratedRadius": 0.06,
+          "slopeNearZero": 12.933,
+          "maxDistance": 3
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=0.3 n=150",
+        "metrics": {
+          "meanDistanceAligned": 1.158,
+          "meanDistanceMisaligned": 1.07,
+          "fractionAligned": 0.72,
+          "fractionMisaligned": 0.74
+        }
+      },
+      {
+        "kind": "knockout",
+        "label": "knockout abpd.gKd",
+        "metrics": {
+          "knockoutDistance": 3
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "refuted",
+    "evidence": "The hypothesis claimed abpd.gKd has the strongest per-unit-displacement period control globally (slopeNearZero=13.874 from prior work). The new data directly falsify this: (1) abpd.gCaS shows slopeNearZero=15.205 in the narrow sweep at matched displacement magnitude (toleratedRadius=0.06), which is HIGHER than abpd.gKd's 14.483 at toleratedRadius=0.1. Since abpd.gCaS also has a smaller toleratedRadius (0.06 vs 0.1), it is both steeper and less tolerant of displacement, indicating stronger local period control per unit displacement. (2) The ratio experiment (abpd.gKd/abpd.gCaS combined) yields slopeNearZero=12.933, lower than either individually, suggesting they are not purely redundant but the combined direction is actually less efficient than gCaS alone — consistent with gCaS being the dominant axis. (3) The randomDirections probe at r=0.3 shows nearly equal fractionAligned (0.72) vs fractionMisaligned (0.74) and very similar meanDistances (1.158 vs 1.07), indicating no strongly preferred gradient direction globally — contradicting a claim of global dominance by any single parameter. (4) abpd.gKCa (4.036) and abpd.gCaT (7.122) are weaker, consistent with prior expectations, but this does not rescue the gKd claim. The first narrow gKd sweep shows slopeNearZero=28.596 but with maxDistance=0.859, suggesting this is a local nonlinearity in one direction, not a global effect. The 'globally dominant' claim is therefore refuted.",
+    "refinedClaim": "abpd.gCaS has equal or greater per-unit-displacement period control compared to abpd.gKd in the near-zero regime (slopeNearZero 15.205 vs 14.483 at matched displacement scales), and neither parameter dominates globally — the period gradient direction is broadly distributed across parameter space (randomDirections fractionAligned≈fractionMisaligned≈0.73). A sharper falsifiable claim: in a head-to-head narrow sweep at identical displacement magnitude δ≤0.06, abpd.gCaS will consistently show higher slopeNearZero than abpd.gKd, making gCaS the strongest local period controller among tested conductances."
+  },
+  "provenance": {
+    "codeVersion": "0.60",
+    "gitSha": "490faa4",
+    "interpreter": "anthropic"
+  }
+}

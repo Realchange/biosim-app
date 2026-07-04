@@ -1,0 +1,118 @@
+{
+  "title": {
+    "en": "The loop: how the system works",
+    "de": "Der Kreislauf: So arbeitet das System"
+  },
+  "intro": {
+    "en": "The whole investigation runs in a repeating loop with a strict division of labour. Click any step to see what it does. The colour tells you who is acting: blue = the AI, green = the deterministic simulator, brown = the human.",
+    "de": "Die ganze Untersuchung läuft in einem sich wiederholenden Kreislauf mit strikter Arbeitsteilung. Klicken Sie auf einen Schritt, um zu sehen, was er tut. Die Farbe zeigt, wer handelt: Blau = die KI, Grün = der deterministische Simulator, Braun = der Mensch."
+  },
+  "nodes": [
+    {
+      "id": "hypothesis",
+      "actor": "human",
+      "order": 1,
+      "label": {
+        "en": "Hypothesis",
+        "de": "Hypothese"
+      },
+      "title": {
+        "en": "A hypothesis in plain text",
+        "de": "Eine Hypothese im Klartext"
+      },
+      "body": {
+        "en": "Everything starts with a claim stated in ordinary language — for example, \"a single control sets the pace of the rhythm\". It is deliberately phrased strongly, so that an honest test has a real chance of proving it wrong.",
+        "de": "Alles beginnt mit einer in gewöhnlicher Sprache formulierten Behauptung — etwa „ein einzelner Regler bestimmt den Takt des Rhythmus\". Sie ist bewusst stark formuliert, damit ein ehrlicher Test eine echte Chance hat, sie zu widerlegen."
+      }
+    },
+    {
+      "id": "transformer",
+      "actor": "ai",
+      "order": 2,
+      "label": {
+        "en": "AI proposes plan",
+        "de": "KI schlägt Plan vor"
+      },
+      "title": {
+        "en": "The AI designs an experiment",
+        "de": "Die KI entwirft ein Experiment"
+      },
+      "body": {
+        "en": "The AI receives only the hypothesis, the list of available controls, and the catalogue of allowed experiment types — nothing else. It returns a plan of experiments as structured data. It sees no internals of the simulator and computes no numbers.",
+        "de": "Die KI erhält nur die Hypothese, die Liste der verfügbaren Regler und den Katalog der erlaubten Experimenttypen — sonst nichts. Sie liefert einen Plan von Experimenten als strukturierte Daten zurück. Sie sieht keine Interna des Simulators und berechnet keine Zahlen."
+      }
+    },
+    {
+      "id": "schema",
+      "actor": "code",
+      "order": 3,
+      "label": {
+        "en": "Schema gate",
+        "de": "Schema-Prüfung"
+      },
+      "title": {
+        "en": "Automatic plausibility check",
+        "de": "Automatische Plausibilitätsprüfung"
+      },
+      "body": {
+        "en": "Before anything runs, code checks the plan strictly: unknown experiment types, non-existent control names, or requests that exceed fixed budgets are rejected. One single automatic repair attempt is allowed. This catches malformed proposals early.",
+        "de": "Bevor irgendetwas läuft, prüft Code den Plan streng: unbekannte Experimenttypen, nicht existierende Reglernamen oder Anforderungen jenseits fester Budgets werden abgewiesen. Ein einziger automatischer Reparaturversuch ist erlaubt. Das fängt fehlerhafte Vorschläge früh ab."
+      }
+    },
+    {
+      "id": "gate",
+      "actor": "human",
+      "order": 4,
+      "label": {
+        "en": "Human gate",
+        "de": "Menschliches Gate"
+      },
+      "title": {
+        "en": "A person releases the plan",
+        "de": "Ein Mensch gibt den Plan frei"
+      },
+      "body": {
+        "en": "This is the deliberate checkpoint. No simulation runs until a human has inspected the validated plan and explicitly released it. The AI can propose, but it cannot act on its own.",
+        "de": "Dies ist die bewusste Kontrollstelle. Keine Simulation läuft, bevor ein Mensch den validierten Plan geprüft und ausdrücklich freigegeben hat. Die KI kann vorschlagen, aber nicht eigenmächtig handeln."
+      }
+    },
+    {
+      "id": "runner",
+      "actor": "code",
+      "order": 5,
+      "label": {
+        "en": "Simulator runs",
+        "de": "Simulator rechnet"
+      },
+      "title": {
+        "en": "Deterministic computation",
+        "de": "Deterministische Berechnung"
+      },
+      "body": {
+        "en": "The runner executes each experiment on the simulator, exactly and repeatably. It stores every raw result together with its origin (software version and git revision) and then condenses the results into a compact set of numbers — the \"digest\". Every number on this site originates here.",
+        "de": "Der Runner führt jedes Experiment auf dem Simulator aus, exakt und wiederholbar. Er speichert jedes Rohergebnis samt Herkunft (Softwareversion und Git-Revision) und verdichtet die Ergebnisse dann zu einem kompakten Satz Zahlen — dem Zahlenauszug („Digest\"). Jede Zahl auf dieser Seite stammt von hier."
+      }
+    },
+    {
+      "id": "interpreter",
+      "actor": "ai",
+      "order": 6,
+      "label": {
+        "en": "AI interprets",
+        "de": "KI deutet"
+      },
+      "title": {
+        "en": "The AI reads only the digest",
+        "de": "Die KI liest nur den Zahlenauszug"
+      },
+      "body": {
+        "en": "The AI now receives only the compact number digest — never the raw simulation. It returns a verdict (supported, refuted, or inconclusive), the evidence, and, where warranted, a sharper claim. That sharper claim becomes the starting point of the next round — closing the loop.",
+        "de": "Die KI erhält jetzt nur den kompakten Zahlenauszug (Digest) — nie die Rohsimulation. Sie liefert ein Urteil (Verdikt: bestätigt, widerlegt oder ergebnisoffen), die Belege und, wo angebracht, eine geschärfte Behauptung (Claim). Diese geschärfte Behauptung wird zum Ausgangspunkt der nächsten Runde — und schließt den Kreislauf."
+      }
+    }
+  ],
+  "footnote": {
+    "en": "The two AI steps (blue) are the only non-deterministic parts and are kept strictly apart from all computation. The green steps produce every number; the brown steps are where humans stay in control.",
+    "de": "Die zwei KI-Schritte (blau) sind die einzigen nicht-deterministischen Teile und werden strikt von aller Berechnung getrennt gehalten. Die grünen Schritte erzeugen jede Zahl; an den braunen Schritten behält der Mensch die Kontrolle."
+  }
+}
