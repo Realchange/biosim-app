@@ -48,15 +48,17 @@ const UI = {
         'zu lesen, hat sich geändert — und damit kehrt sich das Ergebnis komplett um.',
   },
   contrast_intro2: {
-    en: 'The original error: a high measured value ("steep curve") was read as "strong pacemaker". ' +
-        'But for two of the four controls it meant the opposite — the rhythm was collapsing. A ' +
-        'collapsing rhythm is not a fine adjustment of pace but a strangling. Switch between the ' +
-        'old and new points of view with the two buttons and watch the last column:',
-    de: 'Der ursprüngliche Fehler: Ein hoher Messwert („steile Kurve") wurde als „starker Taktgeber" ' +
-        'gedeutet. Tatsächlich bedeutete er bei zwei der vier Regler aber das Gegenteil — der Rhythmus ' +
-        'brach zusammen. Ein zusammenbrechender Rhythmus ist eben kein feines Justieren des Takts, ' +
-        'sondern ein Abwürgen. Schalten Sie mit den beiden Knöpfen zwischen der alten und der neuen ' +
-        'Sichtweise um und beobachten Sie die letzte Spalte:',
+    en: 'At first a high measured value ("steep curve") was read as "strong pacemaker". The round-2 ' +
+        'revision then read the large values of two controls as collapse instead — a real step ' +
+        'forward at the time. Switch between the two readings with the buttons below. But keep in mind ' +
+        'what the later work showed: this second reading was still too coarse — much of what it called ' +
+        'collapse was a rhythm that kept running, as the voltage traces further down make plain.',
+    de: 'Zunächst wurde ein hoher Messwert („steile Kurve") als „starker Taktgeber" gedeutet. Die ' +
+        'Revision aus Runde 2 deutete die großen Werte zweier Regler dann als Kollaps — ein echter ' +
+        'Fortschritt damals. Schalten Sie mit den Knöpfen zwischen beiden Deutungen um. Behalten Sie ' +
+        'dabei aber im Blick, was die spätere Arbeit zeigte: Diese zweite Deutung war noch zu grob — ' +
+        'vieles, was sie Kollaps nannte, war ein weiterlaufender Rhythmus, wie die Spannungsverläufe ' +
+        'weiter unten deutlich machen.',
   },
   btn_slope: { en: '\u2460 Old point of view', de: '\u2460 Alte Sichtweise' },
   btn_collapse: { en: '\u2461 After the self-correction', de: '\u2461 Nach der Selbstkorrektur' },
@@ -87,6 +89,7 @@ const UI = {
   col_ctrl_short: { en: 'Control', de: 'Regler' },
   col_effect_short: { en: 'Effect strength', de: 'Effektstärke' },
   col_collapse_short: { en: 'Collapse?', de: 'Kollaps?' },
+  col_reach_short: { en: 'Collapse-free reach', de: 'Kollapsfreie Reichweite' },
   verdict_refuted: { en: 'refuted', de: 'widerlegt' },
   verdict_supported: { en: 'supported', de: 'bestätigt' },
   source_view: { en: '\u2197 view on GitHub', de: '\u2197 auf GitHub ansehen' },
@@ -95,8 +98,8 @@ const UI = {
     de: 'Verständliche Zusammenfassung des KI-Urteils (Verdikt). Der wörtliche Originaltext steht in der verlinkten Quelldatei.',
   },
   trace_contrast_h2: {
-    en: 'What "collapse" actually looks like',
-    de: 'Wie ein „Kollaps" tatsächlich aussieht',
+    en: 'What a real collapse looks like — and why the eye stays in the loop',
+    de: 'Wie ein echter Kollaps aussieht — und warum das Auge im Prozess bleibt',
   },
   trace_csv: {
     en: '\u2197 raw data (CSV) on GitHub',
@@ -457,19 +460,25 @@ function renderKeyMetrics(km, intro) {
       <th>${t(UI.col_ctrl_short)}</th>
       <th>${t(UI.col_effect_short)}<span class="th-sub">slopeNearZero</span></th>
       <th>${t(UI.col_collapse_short)}<span class="th-sub">collapsedFraction</span></th>
+      <th>${t(UI.col_reach_short)}<span class="th-sub">maxDistanceSmooth</span></th>
       <th>${t(UI.col_reading)}</th>
     </tr></thead>
     <tbody></tbody>`;
   const tb = table.querySelector('tbody');
   for (const [name, m] of Object.entries(km)) {
     if (name === 'randomDirections') continue;
-    const collapse = m.collapsedFraction > 0;
+    // Three-tier colour from the collapse-free reach.
+    const reach = m.smoothReach;
+    const tierClass = reach >= 0.75 ? 'reach-strong'
+                    : reach >= 0.60 ? 'reach-moderate'
+                    : 'reach-weak';
     const tr = el('tr');
     tr.innerHTML =
       `<td>abpd.${name}</td>` +
       `<td class="num">${NUM(m.slopeNearZero)}</td>` +
       `<td class="num">${NUM(m.collapsedFraction)}</td>` +
-      `<td class="${collapse ? 'reading-collapse' : 'reading-smooth'}">${t(m.reading)}</td>`;
+      `<td class="num ${tierClass}">${NUM(m.smoothReach)}</td>` +
+      `<td class="${tierClass}">${t(m.reading)}</td>`;
     tb.appendChild(tr);
   }
   wrap.appendChild(table);

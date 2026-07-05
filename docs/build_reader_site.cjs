@@ -26,6 +26,7 @@ const path = require('path');
 const REPO_ROOT   = path.resolve(__dirname, '..');
 const VERDICT_DIR = path.join(REPO_ROOT, 'core', 'results', 'verdicts');
 const TRACE_DIR   = path.join(REPO_ROOT, 'core', 'results', 'traces');
+const RECOMPUTE_FILE = path.join(REPO_ROOT, 'core', 'results', 'h6-recompute', 'h6-recompute-2026-06-28T17-55-14.json');
 const OUT_DIR     = path.join(__dirname, 'data');
 const SRC_OUT_DIR = path.join(OUT_DIR, 'sources');
 const TRACE_OUT_DIR = path.join(OUT_DIR, 'traces');
@@ -83,8 +84,18 @@ function findExp(digest, labelIncludes) {
   });
 }
 
-// The verdict files are published (verbatim) under docs/data/sources/. Links must
-// point there — NOT to core/results/verdicts/, which is not part of the public repo.
+// Load the corrected (v0.73) digest from the recompute artifact. This carries the
+// post-fix collapsedFraction and the new maxDistanceSmooth (period reach over the
+// non-collapsed points only — the honest measure of pace control). The file lives in
+// core/results/h6-recompute/ (gitignored, local). Returns null if absent, so the
+// generator still runs without it.
+function loadRecomputeDigest() {
+  if (!fs.existsSync(RECOMPUTE_FILE)) return null;
+  const data = JSON.parse(fs.readFileSync(RECOMPUTE_FILE, 'utf8'));
+  return data.newDigest || null;
+}
+
+
 // The original experiment commit (provenance.gitSha) is still shown as a badge on
 // each station, so scientific origin is preserved even though the clickable link
 // resolves to the published copy.
@@ -108,6 +119,7 @@ function buildTimeline() {
   const r2raw = loadVerdict('round2_raw');
   const r2re = loadVerdict('round2_reeval');
   const r3 = loadVerdict('round3');
+  const recompute = loadRecomputeDigest();  // corrected v0.73 metrics, or null
 
   const stations = [];
 
@@ -230,18 +242,19 @@ function buildTimeline() {
     explanation: {
       en: 'With the finer measurement, two controls (gKd and gCaS) now look especially strong. The ' +
         'instrument shows a powerful effect for both. But here lurks the next trap: a powerful ' +
-        'effect can mean two things. Either the control shifts the pace smoothly and in a ' +
-        'controlled way — or it strangles the rhythm entirely. On the instrument, both look the same ' +
-        'at first. The instrument of the time could only tell "rhythm there or not there" and so ' +
-        'conflated these two completely different things. Exactly this error is uncovered in the ' +
-        'next station.',
+        'effect can mean more than one thing. It may be a smooth, controlled shift of pace — or the ' +
+        'rhythm may be tipping over at the edges. On the instrument, these look the same at first: ' +
+        'it could only tell "rhythm there or not there" and so conflated genuinely different things. ' +
+        'The next station shows how the system sharpened the instrument — and, further down, why even ' +
+        'that sharpened instrument still had to be checked against the raw traces by eye.',
       de: 'Mit der feineren Messung sehen jetzt zwei Regler (gKd und gCaS) besonders stark aus. Das ' +
         'Messgerät zeigt für beide einen kräftigen Effekt. Doch hier lauert die nächste Falle: Ein ' +
-        'kräftiger Effekt kann zweierlei bedeuten. Entweder verschiebt der Regler den Takt sauber ' +
-        'und kontrolliert — oder er würgt den Rhythmus ganz ab. Beides sieht auf dem Messgerät ' +
-        'zunächst gleich aus. Das damalige Messgerät konnte nur „Rhythmus da oder nicht da" ' +
-        'unterscheiden und vermischte deshalb diese zwei völlig verschiedenen Dinge. Genau dieser ' +
-        'Fehler wird in der nächsten Station aufgedeckt.',
+        'kräftiger Effekt kann mehr als eines bedeuten. Es kann eine sanfte, kontrollierte ' +
+        'Verschiebung des Takts sein — oder der Rhythmus kippt an den Rändern. Auf dem Messgerät sieht ' +
+        'beides zunächst gleich aus: Es konnte nur „Rhythmus da oder nicht da" unterscheiden und ' +
+        'vermischte so tatsächlich verschiedene Dinge. Die nächste Station zeigt, wie das System das ' +
+        'Messgerät schärfte — und weiter unten, warum selbst dieses geschärfte Messgerät noch von Hand ' +
+        'gegen die Rohdaten geprüft werden musste.',
     },
     sourceFile: publishedPath(r2raw.file),
     permalink: permalink(r2raw.file),
@@ -289,12 +302,20 @@ function buildTimeline() {
         'nicht könnte: nicht bloß besser messen, sondern die eigene Messmethode in Frage stellen.',
     },
     note: {
-      en: 'This is the second self-correction and the actual heart of the project: the AI doubts not ' +
-        'its result but its own measuring instrument — and finds that a high value meant ' +
-        '"strangling", not "steering".',
-      de: 'Dies ist die zweite Selbstkorrektur und der eigentliche Kern des Projekts: Die KI zweifelt ' +
-        'nicht am Ergebnis, sondern an ihrem eigenen Messinstrument — und stellt fest, dass ein hoher ' +
-        'Wert „Abwürgen" bedeutete, nicht „Steuern".',
+      en: 'This second self-correction — the AI doubting not its result but its own instrument — is a ' +
+        'core idea of the project. But it also carries a lesson the project only fully learned later: ' +
+        'a revised instrument is still an instrument, and can still misjudge. This one, it turned out, ' +
+        'over-called collapse on a rhythm that was actually still running (see the trace comparison ' +
+        'below). Catching that needed a human looking at the raw voltage traces by eye — which is why ' +
+        'that visual check belongs in the process as a routine step, not an afterthought.',
+      de: 'Diese zweite Selbstkorrektur — die KI zweifelt nicht am Ergebnis, sondern an ihrem eigenen ' +
+        'Messinstrument — ist eine Kernidee des Projekts. Sie trägt aber auch eine Lehre, die das ' +
+        'Projekt erst später ganz verstand: Ein überarbeitetes Messinstrument ist immer noch ein ' +
+        'Messinstrument und kann weiterhin fehlurteilen. Dieses hier, so zeigte sich, meldete Kollaps ' +
+        'auch dort, wo der Rhythmus in Wahrheit noch lief (siehe der Trace-Vergleich weiter unten). ' +
+        'Das aufzudecken brauchte einen Menschen, der die rohen Spannungsverläufe mit eigenen Augen ' +
+        'prüfte — weshalb diese visuelle Kontrolle als fester Schritt in den Prozess gehört, nicht ' +
+        'als nachträglicher Einfall.',
     },
   });
 
@@ -305,6 +326,16 @@ function buildTimeline() {
   const gCaT = findExp(d, 'gCaT');
   const gKCa = findExp(d, 'gKCa');
   const rand = d.experiments.find(e => e.kind === 'randomDirections');
+
+  // Corrected (v0.73) metrics from the recompute, if present. These carry the
+  // post-fix collapsedFraction and maxDistanceSmooth. Fall back to the stored
+  // verdict values if the recompute file is absent, so the generator still runs.
+  const rc = recompute;
+  const rcExp = (name) => (rc ? findExp(rc, name) : null);
+  const rcM = (name, field, fallback) => {
+    const e = rcExp(name);
+    return e && e.metrics[field] != null ? e.metrics[field] : fallback;
+  };
 
   stations.push({
     id: 'round3',
@@ -326,56 +357,86 @@ function buildTimeline() {
     interpreter: r2re.data.provenance.interpreter,
     verdict: r2re.data.interpretation.verdict,
     explanation: {
-      en: 'With the improved instrument the picture becomes clear. The two controls that previously ' +
-        'looked like strong pacemakers (gKd and gCaS) are in truth no such thing — they only look so ' +
-        'strong because they strangle the rhythm. They are therefore vital for a rhythm to exist at ' +
-        'all, but they do not steer its pace. Two other controls (gCaT and gKCa) shift the pace ' +
-        'cleanly, without breaking anything. An additional test in all directions confirms it: there ' +
-        'is no single dominant pacemaker. The final result is therefore: the pace of the rhythm is ' +
-        'not set by one single control, but by several together — it is spread across many shoulders.',
-      de: 'Mit dem verbesserten Messgerät wird das Bild klar. Die zwei Regler, die vorher wie starke ' +
-        'Taktgeber aussahen (gKd und gCaS), sind in Wahrheit gar keine — sie wirken nur deshalb so ' +
-        'stark, weil sie den Rhythmus abwürgen. Sie sind also lebenswichtig dafür, dass überhaupt ein ' +
-        'Rhythmus da ist, aber sie steuern nicht seinen Takt. Zwei andere Regler (gCaT und gKCa) ' +
-        'verschieben den Takt dagegen sauber, ohne etwas kaputtzumachen. Ein zusätzlicher Test in ' +
-        'alle Richtungen bestätigt: Es gibt keinen einzelnen dominierenden Taktgeber. Das Endergebnis ' +
-        'lautet daher: Der Takt des Rhythmus wird nicht von einem einzigen Regler bestimmt, sondern ' +
-        'von mehreren gemeinsam — es ist auf viele Schultern verteilt.',
+      en: 'With the improved measure the picture becomes clear — but it is a different picture than ' +
+        'it first seemed. The decisive column is the collapse-free pace reach: how far a control can ' +
+        'move the pace without ever endangering the rhythm. Here the real order shows: gKCa steers ' +
+        'most strongly, followed by gCaT and gCaS; gKd looks powerful at first glance, but its clean ' +
+        'reach is the smallest of all. The controls that looked mightiest in raw terms (gKd, gCaS) ' +
+        'reach their large values partly only in edge regions where the rhythm tips over — where, ' +
+        'pushed hard enough, the oscillation gives way to silence or tonic firing. No single control ' +
+        'dominates; an additional test in all directions confirms it. The final result: the pace is ' +
+        'not set by one single control, but by several together, with different weights — spread ' +
+        'across many shoulders.',
+      de: 'Mit der verbesserten Messgröße wird das Bild klar — aber es ist ein anderes, als es ' +
+        'zunächst schien. Die entscheidende Spalte ist die kollapsfreie Steuerreichweite: wie weit ' +
+        'ein Regler den Takt verschieben kann, ohne den Rhythmus je zu gefährden. Hier zeigt sich die ' +
+        'eigentliche Ordnung: gKCa steuert am stärksten, gefolgt von gCaT und gCaS; gKd wirkt auf den ' +
+        'ersten Blick mächtig, aber seine saubere Steuerreichweite ist die kleinste von allen. Die ' +
+        'Regler, die roh am mächtigsten aussahen (gKd, gCaS), erreichen ihre großen Werte teils nur ' +
+        'in Grenzbereichen, in denen der Rhythmus kippt — wo bei starker Verstellung die Oszillation ' +
+        'in Stille oder in tonisches Dauerfeuern übergeht. Kein einzelner Regler dominiert; ein ' +
+        'zusätzlicher Test in alle Richtungen bestätigt das. Das Endergebnis: Der Takt wird nicht von ' +
+        'einem einzigen Regler bestimmt, sondern von mehreren gemeinsam, mit unterschiedlichem ' +
+        'Gewicht — er ist auf viele Schultern verteilt.',
     },
     plainMetricsIntro: {
-      en: 'The four controls examined, at a glance. Red = only acts by strangling the rhythm (not a ' +
-        'real pacemaker). Green = genuinely steers the pace cleanly.',
-      de: 'Die vier untersuchten Regler auf einen Blick. Rot = wirkt nur, weil es den Rhythmus ' +
-        'abwürgt (kein echter Taktgeber). Grün = steuert den Takt tatsächlich sauber.',
+      en: 'The four controls at a glance. The key column is the last one — the collapse-free ' +
+        'pace reach: how far a control can move the pace without ever endangering the rhythm. ' +
+        'It is the honest measure of pace control; the higher, the stronger the lever. gKCa is ' +
+        'the strongest, gCaT and gCaS are moderate, gKd is weak — even though its raw effect ' +
+        'looked large.',
+      de: 'Die vier Regler auf einen Blick. Entscheidend ist die letzte Spalte — die kollapsfreie ' +
+        'Steuerreichweite: wie weit ein Regler den Takt verschieben kann, ohne den Rhythmus je zu ' +
+        'gefährden. Sie ist die ehrliche Maßzahl für echte Takt-Steuerung; je höher, desto stärker ' +
+        'der Hebel. gKCa ist der stärkste, gCaT und gCaS sind mittel, gKd ist schwach — obwohl seine ' +
+        'rohe Effektstärke groß aussah.',
     },
-    keyMetrics: {
-      gKd:  { slopeNearZero: gKd.metrics.slopeNearZero,  collapsedFraction: gKd.metrics.collapsedFraction,
-              reading: { en: 'strangles the rhythm', de: 'würgt den Rhythmus ab' } },
-      gCaS: { slopeNearZero: gCaS.metrics.slopeNearZero, collapsedFraction: gCaS.metrics.collapsedFraction,
-              reading: { en: 'strangles the rhythm', de: 'würgt den Rhythmus ab' } },
-      gCaT: { slopeNearZero: gCaT.metrics.slopeNearZero, collapsedFraction: gCaT.metrics.collapsedFraction,
-              reading: { en: 'steers the pace cleanly', de: 'steuert den Takt sauber' } },
-      gKCa: { slopeNearZero: gKCa.metrics.slopeNearZero, collapsedFraction: gKCa.metrics.collapsedFraction,
-              reading: { en: 'steers the pace cleanly', de: 'steuert den Takt sauber' } },
-      randomDirections: rand ? {
-        meanDistanceAligned: rand.metrics.meanDistanceAligned,
-        meanDistanceMisaligned: rand.metrics.meanDistanceMisaligned,
-      } : null,
-    },
+    keyMetrics: (() => {
+      // Three-tier reading from the collapse-free reach (maxDistanceSmooth):
+      // strong / moderate / weak. Data-driven so it stays correct if numbers change.
+      const reachOf = {
+        gKd:  rcM('gKd',  'maxDistanceSmooth', gKd.metrics.maxDistance),
+        gCaS: rcM('gCaS', 'maxDistanceSmooth', gCaS.metrics.maxDistance),
+        gCaT: rcM('gCaT', 'maxDistanceSmooth', gCaT.metrics.maxDistance),
+        gKCa: rcM('gKCa', 'maxDistanceSmooth', gKCa.metrics.maxDistance),
+      };
+      const tier = (v) => {
+        if (v >= 0.75) return { en: 'strong pace lever',   de: 'starker Takt-Hebel' };
+        if (v >= 0.60) return { en: 'moderate pace lever', de: 'mittlerer Takt-Hebel' };
+        return               { en: 'weak pace lever',     de: 'schwacher Takt-Hebel' };
+      };
+      const cell = (name, verdictExp) => ({
+        slopeNearZero:     verdictExp.metrics.slopeNearZero,
+        collapsedFraction: rcM(name, 'collapsedFraction', verdictExp.metrics.collapsedFraction),
+        smoothReach:       reachOf[name],
+        reading:           tier(reachOf[name]),
+      });
+      return {
+        gKd:  cell('gKd',  gKd),
+        gCaS: cell('gCaS', gCaS),
+        gCaT: cell('gCaT', gCaT),
+        gKCa: cell('gKCa', gKCa),
+        randomDirections: rand ? {
+          meanDistanceAligned: rand.metrics.meanDistanceAligned,
+          meanDistanceMisaligned: rand.metrics.meanDistanceMisaligned,
+        } : null,
+      };
+    })(),
     sourceFile: publishedPath(r2re.file),
     permalink: permalink(r2re.file),
     refinedClaim: {
-      en: 'Among the controls tested, gCaT and gKCa are the best candidates for smooth pace control ' +
-        '(both show a real effect with no collapse at all), with gCaT the strongest of them. The ' +
-        'controls that looked strongest (gKd, gCaS) are necessary for the rhythm to exist but do not ' +
-        'steer its pace. Cycle period is thus controlled in a distributed way, not by a single ' +
-        'pacemaker — a claim that remains open to disproof (falsifiable) by a wide, collapse-free test of gCaT.',
-      de: 'Unter den geprüften Reglern sind gCaT und gKCa die besten Kandidaten für eine sanfte ' +
-        'Takt-Steuerung (beide zeigen einen echten Effekt ganz ohne Zusammenbruch), wobei gCaT der ' +
-        'stärkste von ihnen ist. Die scheinbar stärksten Regler (gKd, gCaS) sind notwendig dafür, dass ' +
-        'überhaupt ein Rhythmus existiert, steuern aber nicht seinen Takt. Der Takt wird somit verteilt ' +
-        'gesteuert, nicht von einem einzelnen Taktgeber — eine Aussage, die durch einen breiten, ' +
-        'kollaps-freien Test von gCaT widerlegbar (falsifizierbar) bleibt.',
+      en: 'The collapse-free pace reach orders the controls clearly: gKCa steers the pace most ' +
+        'strongly, gCaT and gCaS moderately, gKd most weakly. The controls that looked mightiest in ' +
+        'raw terms (gKd, gCaS) reach their large values partly only in edge regions where the rhythm ' +
+        'tips over; their clean control is small. Cycle period is thus controlled in a distributed ' +
+        'way, not by a single pacemaker — a claim that remains open to disproof (falsifiable) by a ' +
+        'wide, collapse-free test.',
+      de: 'Die kollapsfreie Steuerreichweite ordnet die Regler klar: gKCa steuert den Takt am ' +
+        'stärksten, gCaT und gCaS mittel, gKd am schwächsten. Die Regler, die roh am mächtigsten ' +
+        'aussahen (gKd, gCaS), erreichen ihre großen Werte teils nur in Grenzbereichen, in denen der ' +
+        'Rhythmus kippt; ihre saubere Steuerung ist gering. Der Takt wird somit verteilt gesteuert, ' +
+        'nicht von einem einzelnen Taktgeber — eine Aussage, die durch einen breiten, kollapsfreien ' +
+        'Test widerlegbar (falsifizierbar) bleibt.',
     },
   });
 
@@ -407,7 +468,7 @@ function buildContrast() {
         de: 'starker Taktgeber (so die erste Deutung)',
       },
       readingCollapseAware: collapsed
-        ? { en: 'strangles the rhythm — not a pacemaker', de: 'würgt den Rhythmus ab — kein Taktgeber' }
+        ? { en: 'looked like collapse (round-2 reading)', de: 'schien Kollaps zu sein (Deutung aus Runde 2)' }
         : { en: 'steers the pace cleanly', de: 'steuert den Takt sauber' },
       collapsed,
     };
@@ -419,13 +480,17 @@ function buildContrast() {
     sourceFile: publishedPath(r2re.file),
     caption: {
       en: 'One and the same measurements from round 2. Looking only at the effect strength (first ' +
-        'reading), gKd and gCaS appear to be the strongest pacemakers. But once you also record ' +
-        'whether the rhythm collapses in the process (second reading), the picture reverses: their ' +
-        'strength comes from strangling the rhythm, not from steering the pace.',
-      de: 'Ein und dieselben Messungen aus Runde 2. Sieht man nur die Effektstärke (erste ' +
-        'Sichtweise), erscheinen gKd und gCaS als stärkste Taktgeber. Sobald man aber miterfasst, ob ' +
-        'der Rhythmus dabei zusammenbricht (zweite Sichtweise), kehrt sich das Bild um: Ihre Stärke ' +
-        'kommt vom Abwürgen des Rhythmus, nicht vom Steuern des Takts.',
+        'reading), gKd and gCaS appear to be the strongest pacemakers. The round-2 revision then read ' +
+        'their large values as collapse (second reading) — a real step forward at the time. But this ' +
+        'reading was itself still too coarse: as the voltage traces below show, much of what it called ' +
+        'collapse was a rhythm that kept running. The honest measure is the collapse-free reach in the ' +
+        'table above, not this binary.',
+      de: 'Ein und dieselben Messungen aus Runde 2. Sieht man nur die Effektstärke (erste Sichtweise), ' +
+        'erscheinen gKd und gCaS als stärkste Taktgeber. Die Revision aus Runde 2 deutete ihre großen ' +
+        'Werte dann als Kollaps (zweite Sichtweise) — ein echter Fortschritt damals. Doch diese Deutung ' +
+        'war selbst noch zu grob: Wie die Spannungsverläufe weiter unten zeigen, war vieles, was sie ' +
+        'Kollaps nannte, ein weiterlaufender Rhythmus. Die ehrliche Maßzahl ist die kollapsfreie ' +
+        'Steuerreichweite in der Tabelle oben, nicht diese Zweiteilung.',
     },
     rows,
   };
@@ -622,28 +687,43 @@ function buildTraces() {
       sourceFile: tracePublishedPath(colFile),
       permalink: tracePermalink(colFile),
       title: {
-        en: 'Collapsed rhythm (gKd strongly reduced)',
-        de: 'Kollabierter Rhythmus (gKd stark reduziert)',
+        en: 'A genuine collapse (AB/PD silenced)',
+        de: 'Ein echter Kollaps (AB/PD verstummt)',
       },
       caption: {
-        en: 'Here the control gKd of the pacemaker cell AB/PD is turned far down ' +
-          '(log-factor \u22122). AB/PD loses its regular bursting — the pacemaker that sets ' +
-          'the beat falls silent. LP and PY still fire, but without the pacemaker\u2019s drive ' +
-          'there is no ordered three-phase rhythm any more. This is what "strangling the rhythm" ' +
-          'looks like: not a change of pace, but its abolition.',
-        de: 'Hier ist der Regler gKd der Schrittmacherzelle AB/PD weit heruntergedreht ' +
-          '(Log-Faktor \u22122). AB/PD verliert sein regelmäßiges Bursting — der Taktgeber, der ' +
-          'den Rhythmus vorgibt, verstummt. LP und PY feuern zwar noch, aber ohne den Antrieb des ' +
-          'Schrittmachers gibt es keinen geordneten Dreiphasen-Rhythmus mehr. So sieht „den ' +
-          'Rhythmus abwürgen" aus: keine Änderung des Takts, sondern seine Abschaffung.',
+        en: 'This is what a real collapse looks like — for comparison. Here the pacemaker cell AB/PD ' +
+          'has its sodium conductance gNa turned right down, so it can no longer fire action ' +
+          'potentials: it produces no spikes at all (it still shows faint slow-wave wobbles, but the ' +
+          'pacemaker is silent). LP and PY keep firing, but with the pacemaker gone the ordered ' +
+          'three-phase rhythm is genuinely lost — eye and metric agree. Contrast this with the "reduce ' +
+          'gKd" case that the round-2 metric wrongly called collapse: there the rhythm kept running. ' +
+          'Note this uses a different control (gNa) than the H6 sweeps — it illustrates what collapse ' +
+          'IS, not the outcome of an H6 experiment.',
+        de: 'So sieht ein echter Kollaps aus — zum Vergleich. Hier ist bei der Schrittmacherzelle ' +
+          'AB/PD die Natrium-Leitfähigkeit gNa weit heruntergedreht, sodass sie keine ' +
+          'Aktionspotentiale mehr bilden kann: Sie erzeugt gar keine Spikes (man sieht noch schwache ' +
+          'langsame Wellen, aber der Schrittmacher ist stumm). LP und PY feuern weiter, doch ohne den ' +
+          'Schrittmacher ist der geordnete Dreiphasen-Rhythmus wirklich verloren — Auge und Metrik ' +
+          'sind sich einig. Das steht im Gegensatz zum „gKd reduzieren"-Fall, den die Metrik aus ' +
+          'Runde 2 fälschlich Kollaps nannte: Dort lief der Rhythmus weiter. Beachten Sie: Hier wird ' +
+          'ein anderer Regler (gNa) verstellt als in den H6-Messreihen — es zeigt, was Kollaps ' +
+          'überhaupt IST, nicht das Ergebnis eines H6-Experiments.',
       },
     },
     contrastNote: {
-      en: 'Same circuit, same simulator — only one control turned down. The contrast makes ' +
-        'the H6 finding tangible: a high measured "effect" for gKd was collapse, not pace control.',
-      de: 'Gleicher Schaltkreis, gleicher Simulator — nur ein Regler heruntergedreht. Der ' +
-        'Kontrast macht den H6-Befund greifbar: Ein hoher gemessener „Effekt" von gKd war ' +
-        'Kollaps, nicht Takt-Steuerung.',
+      en: 'Left: the intact reference rhythm. Right: a genuine collapse, where the pacemaker AB/PD is ' +
+        'silenced. Seeing a real collapse side by side with the healthy rhythm is what made the metric ' +
+        'flaw visible: the round-2 metric had been calling some still-running rhythms "collapse" too, ' +
+        'and only looking at the actual voltage traces revealed the difference. The lesson for the ' +
+        'workflow: inspecting the raw traces by eye is a routine check, not an optional extra — a ' +
+        'metric, however carefully revised, can still misjudge without it showing in the numbers.',
+      de: 'Links: der intakte Referenzrhythmus. Rechts: ein echter Kollaps, bei dem der Schrittmacher ' +
+        'AB/PD verstummt. Erst ein echter Kollaps neben dem gesunden Rhythmus machte den Metrik-Fehler ' +
+        'sichtbar: Die Metrik aus Runde 2 hatte auch manche weiterlaufenden Rhythmen „Kollaps" genannt, ' +
+        'und erst der Blick auf die tatsächlichen Spannungsverläufe zeigte den Unterschied. Die Lehre ' +
+        'für den Arbeitsprozess: Die rohen Verläufe mit eigenen Augen zu prüfen ist ein fester ' +
+        'Kontrollschritt, kein optionaler Zusatz — eine Messgröße kann, so sorgfältig sie auch ' +
+        'überarbeitet wurde, weiterhin fehlurteilen, ohne dass es in den Zahlen auffällt.',
     },
   };
 }

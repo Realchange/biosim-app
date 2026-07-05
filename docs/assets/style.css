@@ -235,6 +235,9 @@ body {
 .mini-table td.num { font-family: var(--mono); text-align: right; }
 .reading-collapse { color: var(--collapse); font-weight: 600; }
 .reading-smooth { color: var(--smooth); font-weight: 600; }
+.reach-strong { color: var(--smooth); font-weight: 600; }
+.reach-moderate { color: #9a7d2e; font-weight: 600; }
+.reach-weak { color: var(--muted); font-weight: 600; }
 
 /* Source link */
 .source-link {
