@@ -231,6 +231,8 @@ function applyLanguage() {
     document.getElementById('contrast-provenance').textContent =
       `${t({en:'Source',de:'Quelle'})}: ${contrastData.sourceFile} · v${contrastData.version} · ${contrastData.gitSha}`;
     setMode(contrastMode);
+    const cg = document.getElementById('contrast-glossary');
+    if (cg) { cg.innerHTML = ''; cg.appendChild(renderContrastGlossary()); }
   }
 
   // Toggle button active states
@@ -450,6 +452,116 @@ function renderTimeline(timeline) {
   });
 }
 
+function renderMetricGlossary() {
+  const g = {
+    summary: { en: 'What do these numbers mean?', de: 'Was bedeuten diese Zahlen?' },
+    slope_t: { en: 'Effect (slopeNearZero)', de: 'Effekt (slopeNearZero)' },
+    slope_b: {
+      en: 'Raw effect size: how steeply the rhythm changes when this conductance is ' +
+          'nudged a little. A unit-free comparison number \u2014 higher means more ' +
+          'sensitive. Caution: a high value can also come from the rhythm collapsing, ' +
+          'not only from a clean shift of pace, so it is not meaningful on its own.',
+      de: 'Rohe Effektst\u00e4rke: Wie steil sich der Rhythmus \u00e4ndert, wenn man diese ' +
+          'Leitf\u00e4higkeit ein kleines St\u00fcck verstellt. Eine reine Vergleichszahl ohne ' +
+          'Einheit \u2014 h\u00f6her hei\u00dft empfindlicher. Achtung: Ein hoher Wert kann auch ' +
+          'entstehen, wenn der Rhythmus zusammenbricht, nicht nur wenn sich der Takt ' +
+          'sauber verschiebt. Deshalb allein nicht aussagekr\u00e4ftig.',
+    },
+    coll_t: { en: 'Collapse (collapsedFraction)', de: 'Kollaps (collapsedFraction)' },
+    coll_b: {
+      en: "Fraction of a sweep's sample points where the rhythm collapsed (fell silent " +
+          "or went to tonic firing). 0 = never, 1 = always. 0.29 means no valid rhythm " +
+          "at 29 % of the points.",
+      de: 'Anteil der Messpunkte eines Durchlaufs, an denen der Rhythmus zusammenbrach ' +
+          '(verstummte oder in Dauerfeuer \u00fcberging). 0 = nie, 1 = immer. 0,29 bedeutet: ' +
+          'an 29 % der Punkte kein g\u00fcltiger Rhythmus.',
+    },
+    reach_t: { en: 'Reach (maxDistanceSmooth)', de: 'Reichweite (maxDistanceSmooth)' },
+    reach_b: {
+      en: 'The honest measure of real pace control: how far the pace can be moved ' +
+          'without collapsing the rhythm \u2014 collapse points are excluded. Unit-free and ' +
+          'normalised; roughly 1 unit corresponds to about a 1.26-fold change in cycle ' +
+          'length. We read \u2265 0.75 as a strong, \u2265 0.60 as a moderate, below that as a ' +
+          'weak pace lever.',
+      de: 'Die ehrliche Ma\u00dfzahl f\u00fcr echte Takt-Steuerung: Wie weit sich der Takt ' +
+          'verschieben l\u00e4sst, ohne dass der Rhythmus zusammenbricht \u2014 die Kollaps-Punkte ' +
+          'sind herausgerechnet. Einheitenlos und normiert; rund 1 Einheit entspricht ' +
+          'etwa einer 1,26-fachen \u00c4nderung der Zyklusl\u00e4nge. Ab 0,75 werten wir als ' +
+          'starken, ab 0,60 als mittleren, darunter als schwachen Takt-Hebel.',
+    },
+  };
+  // Fixed, always-visible explainer block under the mini-table (not a collapsible panel).
+  const box = el('div', 'metric-glossary');
+  box.appendChild(el('h5', 'glossary-head', t(g.summary)));
+  const mk = (tt, bb) => {
+    const row = el('div', 'glossary-row');
+    row.appendChild(el('dt', 'glossary-term', t(tt)));
+    row.appendChild(el('dd', 'glossary-def', t(bb)));
+    return row;
+  };
+  const dl = el('dl', 'glossary-list');
+  dl.appendChild(mk(g.slope_t, g.slope_b));
+  dl.appendChild(mk(g.coll_t, g.coll_b));
+  dl.appendChild(mk(g.reach_t, g.reach_b));
+  box.appendChild(dl);
+  return box;
+}
+
+// Fixed explainer tailored to the always-visible core-contrast table, whose columns are only
+// Effect strength (slopeNearZero) and Rhythm collapses? (collapsedFraction) — no maxDistanceSmooth —
+// plus the ①/② before/after toggle. Kept separate from the station-5 glossary so each explains
+// exactly the columns its own table shows.
+function renderContrastGlossary() {
+  const g = {
+    summary: { en: 'What do these numbers mean?', de: 'Was bedeuten diese Zahlen?' },
+    slope_t: { en: 'Effect strength (slopeNearZero)', de: 'Effektstärke (slopeNearZero)' },
+    slope_b: {
+      en: 'Raw effect size: how steeply the rhythm changes when this conductance is nudged a little. ' +
+          'A unit-free comparison number — higher means more sensitive. Caution: a high value can also ' +
+          'come from the rhythm collapsing, not only from a clean shift of pace, so it is not meaningful ' +
+          'on its own.',
+      de: 'Rohe Effektstärke: Wie steil sich der Rhythmus ändert, wenn man diese Leitfähigkeit ein ' +
+          'kleines Stück verstellt. Eine reine Vergleichszahl ohne Einheit — höher heißt empfindlicher. ' +
+          'Achtung: Ein hoher Wert kann auch entstehen, wenn der Rhythmus zusammenbricht, nicht nur wenn ' +
+          'sich der Takt sauber verschiebt. Deshalb allein nicht aussagekräftig.',
+    },
+    coll_t: { en: 'Rhythm collapses? (collapsedFraction)', de: 'Bricht der Rhythmus zusammen? (collapsedFraction)' },
+    coll_b: {
+      en: "Fraction of a sweep's sample points where the rhythm collapsed (fell silent or went to tonic " +
+          "firing). 0 = never, 1 = always. This column only appears in view ②; it is what tells a genuine " +
+          "shift of pace apart from a rhythm that simply broke.",
+      de: 'Anteil der Messpunkte eines Durchlaufs, an denen der Rhythmus zusammenbrach (verstummte oder in ' +
+          'Dauerfeuer überging). 0 = nie, 1 = immer. Diese Spalte erscheint nur in Sicht ②; sie unterscheidet ' +
+          'eine echte Takt-Verschiebung von einem Rhythmus, der einfach zusammenbrach.',
+    },
+    toggle_t: { en: 'The toggle (① / ②)', de: 'Der Umschalter (① / ②)' },
+    toggle_b: {
+      en: 'Two readings of the same data. ① Old point of view judges each control by effect strength alone — ' +
+          'and a high value there was mistaken for pace control. ② After the self-correction adds the collapse ' +
+          'column: a large effect that comes from the rhythm collapsing is now read as collapse, not as control. ' +
+          'Switch between them to see how the interpretation changes.',
+      de: 'Zwei Lesarten derselben Daten. ① Alte Sichtweise beurteilt jeden Regler allein an der Effektstärke — ' +
+          'und ein hoher Wert dort wurde mit Takt-Steuerung verwechselt. ② Nach der Selbstkorrektur ergänzt die ' +
+          'Kollaps-Spalte: Ein großer Effekt, der durch Zusammenbruch des Rhythmus entsteht, wird jetzt als ' +
+          'Kollaps gelesen, nicht als Steuerung. Zum Vergleich hin- und herschalten.',
+    },
+  };
+  const box = el('div', 'metric-glossary');
+  box.appendChild(el('h5', 'glossary-head', t(g.summary)));
+  const mk = (tt, bb) => {
+    const row = el('div', 'glossary-row');
+    row.appendChild(el('dt', 'glossary-term', t(tt)));
+    row.appendChild(el('dd', 'glossary-def', t(bb)));
+    return row;
+  };
+  const dl = el('dl', 'glossary-list');
+  dl.appendChild(mk(g.slope_t, g.slope_b));
+  dl.appendChild(mk(g.coll_t, g.coll_b));
+  dl.appendChild(mk(g.toggle_t, g.toggle_b));
+  box.appendChild(dl);
+  return box;
+}
+
 function renderKeyMetrics(km, intro) {
   const wrap = el('div');
   wrap.appendChild(el('h4', null, t(UI.h_controls)));
@@ -482,6 +594,7 @@ function renderKeyMetrics(km, intro) {
     tb.appendChild(tr);
   }
   wrap.appendChild(table);
+  wrap.appendChild(renderMetricGlossary());
   if (km.randomDirections) {
     const rd = km.randomDirections;
     const txt = {

@@ -21,6 +21,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 // --- Paths -------------------------------------------------------------------
 const REPO_ROOT   = path.resolve(__dirname, '..');
@@ -30,6 +31,8 @@ const RECOMPUTE_FILE = path.join(REPO_ROOT, 'core', 'results', 'h6-recompute', '
 const OUT_DIR     = path.join(__dirname, 'data');
 const SRC_OUT_DIR = path.join(OUT_DIR, 'sources');
 const TRACE_OUT_DIR = path.join(OUT_DIR, 'traces');
+const INDEX_HTML  = path.join(__dirname, 'index.html');
+const ASSETS_DIR  = path.join(__dirname, 'assets');
 
 // GitHub repo coordinates for permalinks.
 const GH_OWNER = 'Realchange';
@@ -740,6 +743,27 @@ function copySources() {
 }
 
 // --- Main --------------------------------------------------------------------
+// Cache-busting: stamp index.html's asset URLs with a short content hash of each asset, so any edit
+// to app.js / style.css produces a new URL and browsers can never serve a stale copy (the class of
+// bug behind "I edited app.js but the page still runs the old one"). Idempotent: an existing ?v=... is
+// replaced, so re-running the build just refreshes the hash. Returns the {asset: hash} it wrote.
+function stampAssetVersions() {
+  if (!fs.existsSync(INDEX_HTML)) return null;
+  let html = fs.readFileSync(INDEX_HTML, 'utf8');
+  const stamped = {};
+  for (const asset of ['app.js', 'style.css']) {
+    const file = path.join(ASSETS_DIR, asset);
+    if (!fs.existsSync(file)) continue;
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 10);
+    stamped[asset] = hash;
+    // Replace `assets/<asset>` optionally followed by an existing `?v=...` query with a freshly hashed one.
+    const re = new RegExp(`(assets/${asset.replace('.', '\\.')})(\\?v=[^"']*)?`, 'g');
+    html = html.replace(re, `$1?v=${hash}`);
+  }
+  fs.writeFileSync(INDEX_HTML, html);
+  return stamped;
+}
+
 function main() {
   if (!fs.existsSync(VERDICT_DIR)) {
     throw new Error(`Verdict directory not found: ${VERDICT_DIR}`);
@@ -772,7 +796,13 @@ function main() {
       `2 CSVs published`;
   }
 
+  const stamped = stampAssetVersions();
+
   console.log('Reader-site export complete (bilingual EN/DE):');
+  if (stamped) {
+    console.log('  docs/index.html              (cache-bust stamped: ' +
+      Object.entries(stamped).map(([a, h]) => `${a}?v=${h}`).join(', ') + ')');
+  }
   console.log('  docs/data/h6_timeline.json   (' + timeline.stations.length + ' stations)');
   console.log('  docs/data/h6_contrast.json   (' + contrast.rows.length + ' rows)');
   console.log('  docs/data/h6_loop.json       (' + loop.nodes.length + ' loop nodes)');

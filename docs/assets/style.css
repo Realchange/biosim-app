@@ -283,3 +283,19 @@ body {
   .site-header h1 { font-size: 1.55rem; }
   .station-body { padding-left: 22px; }
 }
+
+/* Metric glossary — fixed explainer block, always visible under the station-5 mini-table */
+.metric-glossary { margin: 10px 0 12px; font-size: 0.9rem; }
+.glossary-head {
+  font-family: var(--mono); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  margin: 0 0 6px; font-weight: 600;
+}
+.glossary-list { margin: 0; padding: 0; }
+.glossary-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.glossary-row:last-child { border-bottom: none; }
+.glossary-term {
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 600;
+  color: var(--fg, #222); margin: 0 0 3px;
+}
+.glossary-def { margin: 0; line-height: 1.5; color: var(--muted); }
