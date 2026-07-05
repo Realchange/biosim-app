@@ -33,6 +33,10 @@ export interface ParamMapping {
 /** One simulation's rhythm, quantified. null = feature undefined (silent / tonic). */
 export interface SummaryStats {
   cyclePeriod: number | null
+  // Per-cell robust oscillation period (ms): burst-onset spacing when the cell bursts, else the
+  // regular single-spike ISI, else null (silent / no periodic structure). ABPD entry == cyclePeriod.
+  // Optional so synthetic SummaryStats fixtures need not populate it (collapse falls back to cyclePeriod).
+  cellPeriod?: Record<PyloricRole, number | null>
   burstDuration: Record<PyloricRole, number | null> // ms (period-dependent)
   dutyCycle: Record<PyloricRole, number | null> // dimensionless, period-invariant
   phaseGap: Record<'ABPD-LP' | 'LP-PY', number | null> // ms (period-dependent)
@@ -46,7 +50,8 @@ export interface SummaryStats {
 /** Continuous distance of a rhythm from the reference θ* (NOT the binary flag). */
 export interface DistanceResult {
   distance: number // finite, normalised
-  collapsed: boolean // true when the rhythm is no longer measurable (reference defined, this run not)
+  collapsed: boolean // true when a reference-oscillating cell has gone silent or tonic in this run
+  collapsedCells?: PyloricRole[] // which reference-oscillating cells lost their oscillation (silence/tonic)
 }
 export interface DistanceMetric {
   reference: SummaryStats

@@ -11,6 +11,39 @@ import { PYLORIC_ROLES } from './types'
 import { runVoltageTraces } from './sim'
 
 const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN)
+const median = (a: number[]) => { const s = [...a].sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : NaN }
+
+// --- Rhythm-classification thresholds (named so the collapse semantics are auditable) ------------
+// A cell with fewer than this many spikes in the measured window has no derivable periodic structure.
+const MIN_SPIKES_FOR_RHYTHM = 3
+// A single-spike (or near-uniform) train counts as a periodic oscillation only if its ISIs are this
+// regular. This is what lets a 1-spike-per-cycle rhythm define a period instead of reading as "lost".
+const REGULAR_ISI_CV_MAX = 0.15
+// Relative to the reference cycle: a cell firing regularly with a period below this fraction is TONIC
+// (fast continuous firing, not the slow pyloric cycle); above this factor it is pathologically slow.
+// Both count as "oscillation lost" in the collapse sense. Kept reference-relative (not absolute) so the
+// classification tracks the reference rhythm whatever its rate.
+const TONIC_PERIOD_FRACTION = 0.3
+const SLOW_PERIOD_FACTOR = 3
+
+// Robust per-cell oscillation period (ms). Prefers burst-onset spacing (multi-spike bursts); if the
+// train is a regular single-spike/near-uniform train (median ISI ≈ period, so burst segmentation finds
+// no boundary), derives the period from the regular ISI instead. Returns null for a silent or
+// irregular train. This is what makes a periodic 1-spike-per-cycle rhythm measurable rather than
+// misread as a collapse. Reference-free: the tonic/too-slow judgement is applied later, in
+// collapsedCells(), where the reference scale is available.
+function robustCellPeriod(spikes: number[], from: number): number | null {
+  const onsets = segment(spikes, from).map((b) => b[0])
+  if (onsets.length >= 2) return (onsets[onsets.length - 1] - onsets[0]) / (onsets.length - 1)
+  const post = spikes.filter((t) => t > from)
+  if (post.length < MIN_SPIKES_FOR_RHYTHM) return null
+  const isi: number[] = []
+  for (let i = 1; i < post.length; i++) isi.push(post[i] - post[i - 1])
+  const m = mean(isi)
+  if (!(m > 0)) return null
+  const cv = Math.sqrt(mean(isi.map((x) => (x - m) ** 2))) / m
+  return cv <= REGULAR_ISI_CV_MAX ? median(isi) : null
+}
 
 // Split a spike train into bursts. A boundary is any ISI above a threshold placed at the largest
 // ABSOLUTE jump in the sorted ISIs — this separates the inter-cycle gaps (the largest ISIs) from
@@ -67,8 +100,14 @@ export function summaryStatsFromTraces(spikeTimes: Record<string, number[]>, opt
   const lp = segment(spikeTimes[roles.LP] ?? [], from)
   const py = segment(spikeTimes[roles.PY] ?? [], from)
 
-  const cyc = abpd.map((b) => b[0])
-  const period = cyc.length >= 2 ? (cyc[cyc.length - 1] - cyc[0]) / (cyc.length - 1) : null
+  const cyc = abpd.map((b) => b[0]) // burst onsets — still used for follower phase/duty
+  // Per-cell robust period (Teil A): a periodic single-spike train now yields a period instead of null.
+  const cellPeriod: Record<PyloricRole, number | null> = {
+    ABPD: robustCellPeriod(spikeTimes[roles.ABPD] ?? [], from),
+    LP: robustCellPeriod(spikeTimes[roles.LP] ?? [], from),
+    PY: robustCellPeriod(spikeTimes[roles.PY] ?? [], from),
+  }
+  const period = cellPeriod.ABPD
 
   // Drop the first and last burst of each train (window-edge partial bursts) to denoise duty/spikes.
   const trim = (B: number[][]) => (B.length >= 4 ? B.slice(1, -1) : B)
@@ -129,6 +168,7 @@ export function summaryStatsFromTraces(spikeTimes: Record<string, number[]>, opt
 
   return {
     cyclePeriod: period,
+    cellPeriod,
     burstDuration: dur,
     dutyCycle: duty,
     phaseGap,
@@ -187,11 +227,29 @@ const NULL_PENALTY = 3
 
 type Feature = { get(s: SummaryStats): number | null; scale: number }
 
-// A rhythm has "collapsed" (relative to a valid reference) when the reference defines a cycle period
-// but this run does not — i.e. the oscillation was lost (silent or tonic). This is the literature's
-// "invalid/NaN" category, kept explicit rather than hidden inside a large distance value.
-function isCollapsed(reference: SummaryStats, stats: SummaryStats): boolean {
-  return reference.cyclePeriod != null && stats.cyclePeriod == null
+// Collapse = a cell that oscillates in the reference has lost that oscillation to SILENCE or TONIC
+// firing in this run (Methods definition). Semantics (Teil C decision): collapse is reported if ANY
+// reference-oscillating cell is lost — not only AB/PD — so a silenced follower (e.g. LP) is no longer
+// invisible. `collapsedCells` names exactly which cells were lost, so the aggregate flag is auditable.
+// A periodic single-spike rhythm (period preserved, only fewer spikes) is NOT a collapse.
+const ROLE_LIST = Object.keys(PYLORIC_ROLES) as PyloricRole[]
+
+function collapsedCells(reference: SummaryStats, stats: SummaryStats): PyloricRole[] {
+  const rp = reference.cellPeriod
+  const sp = stats.cellPeriod
+  // Legacy fallback for synthetic SummaryStats without per-cell data: AB/PD period defined→lost.
+  if (!rp || !sp) return reference.cyclePeriod != null && stats.cyclePeriod == null ? ['ABPD'] : []
+
+  const refCycle = reference.cyclePeriod
+  const out: PyloricRole[] = []
+  for (const role of ROLE_LIST) {
+    if (rp[role] == null) continue // cell does not oscillate in the reference — nothing to lose
+    const p = sp[role]
+    if (p == null) { out.push(role); continue } // silence / no periodic structure
+    if (refCycle != null && p < TONIC_PERIOD_FRACTION * refCycle) { out.push(role); continue } // tonic (too fast)
+    if (refCycle != null && p > SLOW_PERIOD_FACTOR * refCycle) { out.push(role); continue } // pathologically slow → lost
+  }
+  return out
 }
 
 function buildDistance(features: Feature[], reference: SummaryStats): DistanceMetric {
@@ -213,7 +271,10 @@ function buildDistance(features: Feature[], reference: SummaryStats): DistanceMe
   return {
     reference,
     distance,
-    evaluate: (stats) => ({ distance: distance(stats), collapsed: isCollapsed(reference, stats) }),
+    evaluate: (stats) => {
+      const cells = collapsedCells(reference, stats)
+      return { distance: distance(stats), collapsed: cells.length > 0, collapsedCells: cells }
+    },
   }
 }
 
@@ -260,7 +321,10 @@ export function makePeriodDistanceMetric(reference: SummaryStats): DistanceMetri
   return {
     reference,
     distance,
-    evaluate: (stats) => ({ distance: distance(stats), collapsed: isCollapsed(reference, stats) }),
+    evaluate: (stats) => {
+      const cells = collapsedCells(reference, stats)
+      return { distance: distance(stats), collapsed: cells.length > 0, collapsedCells: cells }
+    },
   }
 }
 
