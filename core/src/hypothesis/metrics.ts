@@ -307,15 +307,24 @@ export function makeDistanceMetric(reference: SummaryStats): DistanceMetric {
 
 // Period distance: the relative change of cycle length only, |log10(T/T*)|, normalised so that a
 // ~1.26x change of period (0.1 in log10) is one unit. This isolates the CYCLE PERIOD from rhythm shape, the
-// dual of the phase metric. A lost (null) period adds the standard penalty (never NaN). It is built
-// directly (not via buildDistance) because the comparison is multiplicative, not additive.
+// dual of the phase metric. It is built directly (not via buildDistance) because the comparison is
+// multiplicative, not additive.
+//
+// Collapse handling (v0.73): a COLLAPSED point (silence, tonic, or pathologically slow) takes the capped
+// collapse penalty, NOT a finite distance computed from a sham period. Without this, a tonic AB/PD with a
+// measured ~20 ms "period" would score |log10(20/T*)|/0.1 ≈ 17 — smuggling the collapse back in as a huge
+// finite distance and re-mixing the two categories the collapse flag exists to separate. The COLLAPSE FLAG,
+// not the (un)definedness of the period, drives the cap: a silent point (period null) and a tonic point
+// (period ~20 ms) therefore get the identical penalty. This is exactly the pre-v0.72 null-period behaviour,
+// now extended to the tonic/too-slow collapses that v0.72 made measurable.
 const PERIOD_LOG_SCALE = 0.1
 export function makePeriodDistanceMetric(reference: SummaryStats): DistanceMetric {
   const distance = (stats: SummaryStats) => {
     const r = reference.cyclePeriod
-    const x = stats.cyclePeriod
     if (r == null || r <= 0) return 0
-    if (x == null || x <= 0) return NULL_PENALTY
+    if (collapsedCells(reference, stats).length > 0) return NULL_PENALTY // collapse → capped, not a sham finite value
+    const x = stats.cyclePeriod
+    if (x == null || x <= 0) return NULL_PENALTY // defensive: no valid period, no collapse verdict
     return Math.abs(Math.log10(x / r)) / PERIOD_LOG_SCALE
   }
   return {

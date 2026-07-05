@@ -10,7 +10,9 @@ export interface SweepSummary {
   toleratedRadius: number // |amount| at which distance first crosses τ, interpolated between samples
   thresholdCrossed: boolean // whether τ was actually crossed within the tested range (else radius = max |amount|)
   slopeNearZero: number // mean distance / |amount| over the innermost points (local curvature proxy)
-  maxDistance: number
+  maxDistance: number // max distance over ALL points (collapsed points carry the capped penalty)
+  maxDistanceSmooth: number // max distance over NON-collapsed points only — the "smooth control" reach:
+  // how far this lever retimes the rhythm WITHOUT abolishing it. 0 if every point collapsed.
   collapsedFraction: number // fraction of swept points whose rhythm collapsed (undefined), 0..1
 }
 
@@ -57,8 +59,18 @@ export function summarizeSweep(label: string, results: RunResultWithMeta[], tau 
   const near = pts.filter((p) => p.amount !== 0).sort((a, b) => Math.abs(a.amount) - Math.abs(b.amount)).slice(0, 4)
   const slopeNearZero = near.length ? near.reduce((s, p) => s + p.d / Math.abs(p.amount), 0) / near.length : 0
   const collapsedFraction = pts.length ? pts.filter((p) => p.collapsed).length / pts.length : 0
+  const smooth = pts.filter((p) => !p.collapsed)
+  const maxDistanceSmooth = smooth.length ? Math.max(...smooth.map((p) => p.d)) : 0
 
-  return { label, toleratedRadius, thresholdCrossed, slopeNearZero, maxDistance: Math.max(...pts.map((p) => p.d)), collapsedFraction }
+  return {
+    label,
+    toleratedRadius,
+    thresholdCrossed,
+    slopeNearZero,
+    maxDistance: Math.max(...pts.map((p) => p.d)),
+    maxDistanceSmooth,
+    collapsedFraction,
+  }
 }
 
 export interface RandomSummary {
