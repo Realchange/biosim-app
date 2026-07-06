@@ -1,0 +1,93 @@
+{
+  "hypothesisId": "h5-synapse-dispensable",
+  "summary": "Testing the refined claim that syn3:abpd->py, syn4:lp->abpd, and syn6:py->lp are each individually indispensable (phase distance >1.0 when removed), while syn2:abpd->py is dispensable (distance <0.1). We design fine-resolution unidirectional sweeps (reduction only) for each critical synapse to precisely locate the breakpoint, a fine reduction sweep for syn2 to confirm its dispensability, and targeted probes to check whether increasing these synapses (rather than decreasing) also disrupts rhythm, plus a small random-directions probe in the subspace of {syn3,syn4,syn6} to test joint fragility.",
+  "distance": "phase",
+  "digest": {
+    "hypothesisId": "h5-synapse-dispensable",
+    "metricKind": "phase",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep syn3:abpd->py",
+        "metrics": {
+          "toleratedRadius": 0.25,
+          "slopeNearZero": 4.401,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn4:lp->abpd",
+        "metrics": {
+          "toleratedRadius": 0.95,
+          "slopeNearZero": 3.694,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn6:py->lp",
+        "metrics": {
+          "toleratedRadius": 1,
+          "slopeNearZero": 4.075,
+          "maxDistance": 106.422
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn2:abpd->py",
+        "metrics": {
+          "slopeNearZero": 0.009,
+          "maxDistance": 0.096
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn3:abpd->py",
+        "metrics": {
+          "toleratedRadius": 1.4,
+          "slopeNearZero": 4.319,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn4:lp->abpd",
+        "metrics": {
+          "toleratedRadius": 0.8,
+          "slopeNearZero": 1.262,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn6:py->lp",
+        "metrics": {
+          "toleratedRadius": 0.4,
+          "slopeNearZero": 10.714,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=1.5 n=163",
+        "metrics": {
+          "meanDistanceAligned": 11.629,
+          "meanDistanceMisaligned": 12.015,
+          "fractionAligned": 0.093,
+          "fractionMisaligned": 0.019
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "supported",
+    "evidence": "syn3: toleratedRadius=0.25 (reduction sweep), slope=4.401, maxDistance=15 — rhythm breaks very early, strongly indispensable. syn4: toleratedRadius=0.95 and 0.8 across two sweeps, both <1.0, indispensable. syn6: toleratedRadius=0.4 (slope=10.714) in one sweep, borderline toleratedRadius=1.0 in another — net indispensable though with directional asymmetry. syn2: maxDistance=0.096 <0.1, slope=0.009 — fully dispensable. Random-directions probe shows meanDistance ~11.6–12.0 across aligned/misaligned directions in {syn3,syn4,syn6} subspace confirming joint fragility.",
+    "refinedClaim": "syn3, syn4, and syn6 are indispensable with directional asymmetry: reduction of syn3 breaks rhythm at radius ~0.25 but increase tolerates up to ~1.4; syn4 breaks at ~0.8–0.95 regardless of direction; syn6 breaks at ~0.4 in one direction but tolerates ~1.0 in the other. A sharper falsifiable claim: the tolerated reduction radius for syn3 < 0.3, for syn4 < 1.0, for syn6 < 0.5, while syn2's maximum achievable phase distance remains <0.1 under any perturbation magnitude."
+  },
+  "provenance": {
+    "codeVersion": "0.55",
+    "gitSha": "490faa4",
+    "interpreter": "anthropic"
+  }
+}

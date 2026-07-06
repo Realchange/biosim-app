@@ -60,6 +60,33 @@ function resolveVerdictFiles() {
   }
 }
 
+// --- The two verdict files of the H5 case study (Milestone 1: data only) -----
+// H5 is a clean falsify → refine → confirm arc over TWO rounds, with no measurement
+// self-correction (unlike H6) and using the PHASE/SHAPE distance, not the period one.
+const H5_VERDICTS = {
+  round1: { frag: '06-43-57', file: null },  // "every synapse dispensable" → refuted
+  round2: { frag: '11-43-56', file: null },  // refined per-synapse claim → supported
+};
+
+function resolveH5VerdictFiles() {
+  const all = fs.readdirSync(VERDICT_DIR).filter(f => f.endsWith('.json'));
+  for (const key of Object.keys(H5_VERDICTS)) {
+    const frag = H5_VERDICTS[key].frag;
+    const match = all.find(f => f.includes('h5-synapse-dispensable') && f.includes(frag));
+    if (!match) {
+      throw new Error(`Could not find H5 verdict for fragment "${frag}". ` +
+        `Files present: ${all.filter(f => f.includes('h5')).join(', ')}`);
+    }
+    H5_VERDICTS[key].file = match;
+  }
+}
+
+function loadH5Verdict(key) {
+  const file = H5_VERDICTS[key].file;
+  const raw = fs.readFileSync(path.join(VERDICT_DIR, file), 'utf8');
+  return { file, data: JSON.parse(raw) };
+}
+
 function loadVerdict(key) {
   const file = KEY_VERDICTS[key].file;
   const raw = fs.readFileSync(path.join(VERDICT_DIR, file), 'utf8');
@@ -742,6 +769,288 @@ function copySources() {
   }
 }
 
+// =============================================================================
+// H5 case study — synapse dispensability (Milestone 1: DATA ONLY)
+// Parallel to the H6 path; the H6 code above is untouched. Emits h5_timeline.json
+// with the SAME top-level + station schema as H6 so a future switcher can just
+// swap the JSON — but with an H5-appropriate 2-station sequence, a synapse-keyed
+// keyMetrics table carrying a self-describing column DESCRIPTOR (metricKind:'phase'),
+// and an H5-specific glossary (toleratedRadius / shape distance, NOT collapse/reach).
+// No app.js / render change here — that is a later milestone.
+// =============================================================================
+
+// 'syn3:abpd->py' -> 'abpd→py' (the human-readable connection); the raw id and the
+// 'synN' tag are kept alongside so the two parallel abpd->py synapses stay distinct.
+function synArrow(id) {
+  const rhs = id.includes(':') ? id.split(':')[1] : id;
+  return rhs.replace('->', '→');
+}
+function synTag(id) {
+  return id.includes(':') ? id.split(':')[0] : id;
+}
+
+// Among a synapse's sweeps, pick the FRAGILE direction — the smallest toleratedRadius
+// (how far it can be weakened before the phase pattern breaks). An absent radius means
+// that direction never broke, so it is treated as +Infinity (most tolerant). Returns
+// null-radius for a synapse that never breaks either way (genuinely dispensable).
+function pickFragileSweep(digest, synId) {
+  const sw = (digest.experiments || []).filter(
+    e => e.kind === 'sweep' && e.label && e.label.includes(synId)
+  );
+  if (sw.length === 0) return null;
+  let best = sw[0], bestR = Infinity;
+  for (const e of sw) {
+    const r = (e.metrics && typeof e.metrics.toleratedRadius === 'number')
+      ? e.metrics.toleratedRadius : Infinity;
+    if (r < bestR) { bestR = r; best = e; }
+  }
+  const radius = (best.metrics && typeof best.metrics.toleratedRadius === 'number')
+    ? best.metrics.toleratedRadius : null;
+  return { slopeNearZero: best.metrics.slopeNearZero, toleratedRadius: radius };
+}
+
+// Reading tier from the fragile toleratedRadius: smaller = breaks sooner = more indispensable.
+function h5Tier(radius) {
+  if (radius == null)  return { tier: 'dispensable',   reading: { en: 'dispensable',            de: 'entbehrlich' } };
+  if (radius < 0.5)    return { tier: 'strong',        reading: { en: 'strongly indispensable',  de: 'stark unentbehrlich' } };
+  if (radius < 1.0)    return { tier: 'indispensable', reading: { en: 'indispensable',           de: 'unentbehrlich' } };
+  return                      { tier: 'dispensable',   reading: { en: 'dispensable (tolerant)',  de: 'entbehrlich (tolerant)' } };
+}
+
+function buildH5Timeline() {
+  const r1 = loadH5Verdict('round1');   // refuted
+  const r2 = loadH5Verdict('round2');   // supported (carries the tested table)
+  const d2 = r2.data.digest;
+
+  // The four connections the refined claim addresses. Numbers are injected from the
+  // round-2 digest (never hand-entered); rows are sorted fragile-first (dispensable last).
+  const SYN = ['syn3:abpd->py', 'syn4:lp->abpd', 'syn6:py->lp', 'syn2:abpd->py'];
+  const rows = SYN.map(id => {
+    const f = pickFragileSweep(d2, id) || { slopeNearZero: null, toleratedRadius: null };
+    const t = h5Tier(f.toleratedRadius);
+    return {
+      entity: id,
+      entityLabel: synArrow(id),
+      tag: synTag(id),
+      slopeNearZero: f.slopeNearZero,
+      toleratedRadius: f.toleratedRadius,   // null = never broke = dispensable
+      reading: t.reading,
+      readingTier: t.tier,
+    };
+  }).sort((a, b) => {
+    const ra = a.toleratedRadius == null ? Infinity : a.toleratedRadius;
+    const rb = b.toleratedRadius == null ? Infinity : b.toleratedRadius;
+    return ra - rb;
+  });
+
+  const rand = (d2.experiments || []).find(e => e.kind === 'randomDirections');
+
+  const keyMetrics = {
+    // Self-describing descriptor so a later renderer can build the table without hardcoding.
+    metricKind: 'phase',
+    columns: [
+      { key: 'entity',          num: false, label: { en: 'Connection',     de: 'Verbindung' } },
+      { key: 'slopeNearZero',   num: true,  label: { en: 'Effect strength', de: 'Effektstärke' }, sub: 'slopeNearZero' },
+      { key: 'toleratedRadius', num: true,  label: { en: 'Breaks at',       de: 'Bricht bei' },   sub: 'toleratedRadius' },
+      { key: 'reading',         num: false, label: { en: 'Interpretation',  de: 'Deutung' } },
+    ],
+    rows,
+    randomDirections: rand ? {
+      meanDistanceAligned: rand.metrics.meanDistanceAligned,
+      meanDistanceMisaligned: rand.metrics.meanDistanceMisaligned,
+    } : null,
+    // H5 explains DIFFERENT terms than H6 (no collapse / no reach): the shape distance and the
+    // tolerated radius. Carried as data so the later renderer only has to display it.
+    glossary: {
+      head: { en: 'What do these numbers mean?', de: 'Was bedeuten diese Zahlen?' },
+      terms: [
+        {
+          term: { en: 'Effect strength (slopeNearZero)', de: 'Effektstärke (slopeNearZero)' },
+          def: {
+            en: 'How strongly the rhythm’s shape reacts when this connection is weakened a little. ' +
+                'A unit-free comparison number — higher means the pattern is more sensitive to this connection.',
+            de: 'Wie stark die Form des Rhythmus reagiert, wenn man diese Verbindung ein kleines Stück ' +
+                'abschwächt. Eine einheitenlose Vergleichszahl — höher heißt, das Muster ist empfindlicher ' +
+                'für diese Verbindung.',
+          },
+        },
+        {
+          term: { en: 'Breaks at (toleratedRadius)', de: 'Bricht bei (toleratedRadius)' },
+          def: {
+            en: 'How far this connection can be weakened before the three-cell pattern falls apart. ' +
+                'The smaller the number, the more indispensable the connection (it breaks sooner). ' +
+                'A dash means it never broke, however far it was pushed — genuinely dispensable.',
+            de: 'Wie weit sich diese Verbindung abschwächen lässt, bevor das Dreizell-Muster zerfällt. ' +
+                'Je kleiner die Zahl, desto unentbehrlicher die Verbindung (sie bricht früher). Ein ' +
+                'Strich bedeutet: Sie brach nie, egal wie weit getrieben — wirklich entbehrlich.',
+          },
+        },
+        {
+          term: { en: 'Shape distance (phase)', de: 'Musterabstand (Phase)' },
+          def: {
+            en: 'The yardstick used here measures how much the SHAPE of the rhythm changed — the order and ' +
+                'relative timing of the three cells — independent of its speed. A rhythm that merely runs ' +
+                'faster or slower does not count as disrupted; only a real change of pattern does.',
+            de: 'Der hier verwendete Maßstab misst, wie stark sich die FORM des Rhythmus änderte — die ' +
+                'Reihenfolge und das relative Timing der drei Zellen — unabhängig vom Tempo. Ein Rhythmus, ' +
+                'der nur schneller oder langsamer läuft, gilt nicht als gestört; nur eine echte ' +
+                'Musteränderung zählt.',
+          },
+        },
+      ],
+    },
+  };
+
+  const stations = [];
+
+  // Station 1 — Round 1: "every synapse dispensable" refuted (no table here, per decision).
+  stations.push({
+    id: 'h5-round1',
+    kind: 'round',
+    title: {
+      en: 'Round 1 — is every connection dispensable?',
+      de: 'Runde 1 — ist jede Verbindung entbehrlich?',
+    },
+    subtitle: {
+      en: 'Each connection weakened to nothing, one at a time',
+      de: 'Jede Verbindung einzeln bis auf null abgeschwächt',
+    },
+    plainQuestion: {
+      en: 'Can any single connection be removed without harm?',
+      de: 'Lässt sich irgendeine einzelne Verbindung folgenlos entfernen?',
+    },
+    version: r1.data.provenance.codeVersion,
+    gitSha: r1.data.provenance.gitSha,
+    interpreter: r1.data.provenance.interpreter,
+    hypothesis: {
+      en: 'Every single graded synapse (connection between the cells) is dispensable: it can be ' +
+        'weakened to zero without disrupting the rhythm.',
+      de: 'Jede einzelne graduelle Synapse (Verbindung zwischen den Zellen) ist entbehrlich: Sie ' +
+        'lässt sich bis auf null abschwächen, ohne den Rhythmus zu stören.',
+    },
+    verdict: r1.data.interpretation.verdict,
+    explanation: {
+      en: 'To test the guess, the system weakens each of the seven connections in turn, all the way ' +
+        'down to nothing, and watches whether the three cells still fire in their fixed order and ' +
+        'timing — the shape of the rhythm, not its speed. Most connections can be thinned out with ' +
+        'little effect. But not all: at least three of them break the pattern almost immediately when ' +
+        'weakened. So the blanket claim “every connection is dispensable” is refuted. The system also ' +
+        'spots the opposite case — a second, parallel connection from AB/PD to PY that barely matters ' +
+        'at all — and names the indispensable suspects for a sharper follow-up test.',
+      de: 'Um die Vermutung zu prüfen, schwächt das System jede der sieben Verbindungen nacheinander ' +
+        'bis auf null ab und beobachtet, ob die drei Zellen weiterhin in ihrer festen Reihenfolge und ' +
+        'ihrem Timing feuern — die Form des Rhythmus, nicht sein Tempo. Die meisten Verbindungen lassen ' +
+        'sich ausdünnen, ohne dass viel passiert. Aber nicht alle: Mindestens drei zerbrechen das Muster ' +
+        'fast sofort, sobald man sie abschwächt. Die pauschale Behauptung „jede Verbindung ist ' +
+        'entbehrlich“ ist damit widerlegt. Das System erkennt auch den umgekehrten Fall — eine zweite, ' +
+        'parallele Verbindung von AB/PD zu PY, die kaum eine Rolle spielt — und benennt die ' +
+        'unentbehrlichen Verdächtigen für einen schärferen Folgetest.',
+    },
+    sourceFile: publishedPath(r1.file),
+    permalink: permalink(r1.file),
+    refinedClaim: {
+      en: 'At least three connections — abpd→py (syn3), lp→abpd (syn4) and py→lp (syn6) — are ' +
+        'indispensable: removing any one of them alone drives the rhythm’s shape far from normal. Only ' +
+        'the second abpd→py connection (syn2) looks genuinely dispensable. Sharper and falsifiable: ' +
+        'removing any of {syn3, syn4, syn6} pushes the shape distance above 1.0, while removing syn2 ' +
+        'keeps it below 0.1.',
+      de: 'Mindestens drei Verbindungen — abpd→py (syn3), lp→abpd (syn4) und py→lp (syn6) — sind ' +
+        'unentbehrlich: Entfernt man eine davon allein, entfernt sich die Form des Rhythmus weit vom ' +
+        'Normalzustand. Nur die zweite abpd→py-Verbindung (syn2) wirkt wirklich entbehrlich. Schärfer ' +
+        'und falsifizierbar: Das Entfernen einer aus {syn3, syn4, syn6} treibt den Musterabstand über ' +
+        '1,0, während das Entfernen von syn2 ihn unter 0,1 hält.',
+    },
+  });
+
+  // Station 2 — Round 2: refined claim confirmed; the metric table lives here.
+  stations.push({
+    id: 'h5-round2',
+    kind: 'round',
+    title: {
+      en: 'Round 2 — which connections are truly indispensable?',
+      de: 'Runde 2 — welche Verbindungen sind wirklich unverzichtbar?',
+    },
+    subtitle: {
+      en: 'The refined claim, tested in both directions',
+      de: 'Die verfeinerte Behauptung, in beide Richtungen geprüft',
+    },
+    plainQuestion: {
+      en: 'Exactly which connections can the rhythm not do without?',
+      de: 'Welche Verbindungen genau kann der Rhythmus nicht entbehren?',
+    },
+    version: r2.data.provenance.codeVersion,
+    gitSha: r2.data.provenance.gitSha,
+    interpreter: r2.data.provenance.interpreter,
+    hypothesis: {
+      en: 'The refined claim under test: abpd→py (syn3), lp→abpd (syn4) and py→lp (syn6) are each ' +
+        'individually indispensable, while the second abpd→py connection (syn2) is dispensable.',
+      de: 'Die geprüfte, verfeinerte Behauptung: abpd→py (syn3), lp→abpd (syn4) und py→lp (syn6) sind ' +
+        'jeweils einzeln unentbehrlich, während die zweite abpd→py-Verbindung (syn2) entbehrlich ist.',
+    },
+    verdict: r2.data.interpretation.verdict,
+    explanation: {
+      en: 'The refined claim is put to the test — and it holds. Weaken any of the three suspect ' +
+        'connections and the three-cell pattern breaks down well before the connection is fully gone; ' +
+        'the second AB/PD→PY connection, by contrast, can be removed with almost no effect. There is a ' +
+        'twist the numbers make plain: these connections are fragile to WEAKENING but tolerant of ' +
+        'STRENGTHENING — the same connection whose loss wrecks the rhythm can be turned up considerably ' +
+        'with little harm. A cross-check in many random directions confirms there is no single ' +
+        'outstanding culprit; indispensability is shared among the three.',
+      de: 'Die verfeinerte Behauptung wird geprüft — und sie hält. Schwächt man eine der drei ' +
+        'verdächtigen Verbindungen ab, zerfällt das Dreizell-Muster deutlich, bevor die Verbindung ganz ' +
+        'verschwunden ist; die zweite AB/PD→PY-Verbindung dagegen lässt sich fast folgenlos entfernen. ' +
+        'Ein Detail machen die Zahlen deutlich: Diese Verbindungen sind empfindlich gegen ABSCHWÄCHUNG, ' +
+        'aber tolerant gegen VERSTÄRKUNG — dieselbe Verbindung, deren Verlust den Rhythmus zerstört, ' +
+        'lässt sich erheblich hochdrehen, ohne großen Schaden. Eine Gegenprobe in viele zufällige ' +
+        'Richtungen bestätigt: Es gibt keinen einzelnen herausragenden Übeltäter; die Unentbehrlichkeit ' +
+        'verteilt sich auf die drei.',
+    },
+    plainMetricsIntro: {
+      en: 'The four connections at a glance. The key column is “Breaks at” — how far a connection can ' +
+        'be weakened before the rhythm’s pattern falls apart. The smaller the number, the more ' +
+        'indispensable the connection (it breaks sooner). A dash means it never broke, however far it ' +
+        'was pushed — genuinely dispensable.',
+      de: 'Die vier Verbindungen auf einen Blick. Entscheidend ist die Spalte „Bricht bei“ — wie weit ' +
+        'sich eine Verbindung abschwächen lässt, bevor das Muster des Rhythmus zerfällt. Je kleiner die ' +
+        'Zahl, desto unentbehrlicher die Verbindung (sie bricht früher). Ein Strich bedeutet: Sie brach ' +
+        'nie, egal wie weit getrieben — wirklich entbehrlich.',
+    },
+    keyMetrics,
+    sourceFile: publishedPath(r2.file),
+    permalink: permalink(r2.file),
+    refinedClaim: {
+      en: 'syn3, syn4 and syn6 are indispensable, with a directional asymmetry: weakening breaks the ' +
+        'rhythm early (tolerated reduction radius below ~0.3, ~1.0 and ~0.5 respectively), while ' +
+        'strengthening is tolerated much further. syn2 stays below a shape distance of 0.1 under any ' +
+        'perturbation — genuinely dispensable. This remains open to disproof by a single-connection ' +
+        'removal that leaves the shape distance below 1.0.',
+      de: 'syn3, syn4 und syn6 sind unentbehrlich, mit einer Richtungs-Asymmetrie: Abschwächung bricht ' +
+        'den Rhythmus früh (tolerierter Reduktionsradius unter ~0,3, ~1,0 bzw. ~0,5), während ' +
+        'Verstärkung viel weiter toleriert wird. syn2 bleibt unter einem Musterabstand von 0,1 bei jeder ' +
+        'Störung — wirklich entbehrlich. Das bleibt widerlegbar durch das Entfernen einer einzelnen ' +
+        'Verbindung, das den Musterabstand unter 1,0 lässt.',
+    },
+  });
+
+  return {
+    generatedAt: new Date().toISOString(),
+    hypothesisId: 'h5-synapse-dispensable',
+    metricKind: 'phase',
+    title: {
+      en: 'H5 — is every synapse dispensable? one refutation, one confirmation',
+      de: 'H5 — ist jede Synapse entbehrlich? eine Widerlegung, eine Bestätigung',
+    },
+    stations,
+  };
+}
+
+function copyH5Sources() {
+  for (const key of Object.keys(H5_VERDICTS)) {
+    const file = H5_VERDICTS[key].file;
+    fs.copyFileSync(path.join(VERDICT_DIR, file), path.join(SRC_OUT_DIR, file));
+  }
+}
+
 // --- Main --------------------------------------------------------------------
 // Cache-busting: stamp index.html's asset URLs with a short content hash of each asset, so any edit
 // to app.js / style.css produces a new URL and browsers can never serve a stale copy (the class of
@@ -771,15 +1080,19 @@ function main() {
   fs.mkdirSync(SRC_OUT_DIR, { recursive: true });
 
   resolveVerdictFiles();
+  resolveH5VerdictFiles();
 
   const timeline = buildTimeline();
   const contrast = buildContrast();
   const loop = buildLoop();
+  const h5timeline = buildH5Timeline();   // Milestone 1: H5 data (not yet wired into the reader UI)
 
   fs.writeFileSync(path.join(OUT_DIR, 'h6_timeline.json'), JSON.stringify(timeline, null, 2));
   fs.writeFileSync(path.join(OUT_DIR, 'h6_contrast.json'), JSON.stringify(contrast, null, 2));
   fs.writeFileSync(path.join(OUT_DIR, 'h6_loop.json'), JSON.stringify(loop, null, 2));
+  fs.writeFileSync(path.join(OUT_DIR, 'h5_timeline.json'), JSON.stringify(h5timeline, null, 2));
   copySources();
+  copyH5Sources();
 
   // Voltage traces are optional: only build if the CSV exports are present.
   let traceInfo = 'skipped (no core/results/traces/reference.csv)';
@@ -807,9 +1120,15 @@ function main() {
   console.log('  docs/data/h6_contrast.json   (' + contrast.rows.length + ' rows)');
   console.log('  docs/data/h6_loop.json       (' + loop.nodes.length + ' loop nodes)');
   console.log('  docs/data/h6_traces.json     (' + traceInfo + ')');
-  console.log('  docs/data/sources/           (' + Object.keys(KEY_VERDICTS).length + ' verdict files)');
+  console.log('  docs/data/h5_timeline.json   (' + h5timeline.stations.length + ' stations, ' +
+    'metricKind=' + h5timeline.metricKind + ') [Milestone 1 — data only, not yet in UI]');
+  console.log('  docs/data/sources/           (' +
+    (Object.keys(KEY_VERDICTS).length + Object.keys(H5_VERDICTS).length) + ' verdict files: H6 + H5)');
   for (const key of Object.keys(KEY_VERDICTS)) {
     console.log('    - ' + KEY_VERDICTS[key].file);
+  }
+  for (const key of Object.keys(H5_VERDICTS)) {
+    console.log('    - ' + H5_VERDICTS[key].file);
   }
 }
 

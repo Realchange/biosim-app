@@ -4,7 +4,10 @@
 const NUM = (x) => (typeof x === 'number' ? x.toFixed(3).replace(/\.?0+$/, '') : x);
 
 let LANG = 'en';                 // current language
-let timelineData = null;
+let activeHyp = 'h6';            // active case study: 'h6' | 'h5'
+let timelineData = null;         // the ACTIVE hypothesis timeline (points at h6Timeline or h5Timeline)
+let h6Timeline = null;
+let h5Timeline = null;
 let contrastData = null;
 let loopData = null;
 let traceData = null;
@@ -24,6 +27,7 @@ function t(val) {
 const UI = {
   eyebrow: { en: 'BIOSIM · An AI system as a scientist',
              de: 'BIOSIM · Ein KI-System als Wissenschaftler' },
+  // Page header is hypothesis-specific (H6 default here; H5 variants below). Set in applyLanguage().
   h1: { en: 'How an AI notices and corrects its own mistake',
         de: 'Wie eine KI ihren eigenen Denkfehler bemerkt und korrigiert' },
   lede: {
@@ -34,6 +38,18 @@ const UI = {
         'Wissenschaftler verhält: Es stellt eine Vermutung auf, testet sie, merkt zweimal ' +
         'selbst, dass es sich geirrt hat — und bessert nach. Alles zum Durchklicken und ohne ' +
         'Vorwissen erklärt.',
+  },
+  h1_h5: { en: 'Which connections can the rhythm not do without?',
+           de: 'Welche Verbindungen kann der Rhythmus nicht entbehren?' },
+  lede_h5: {
+    en: 'This is the story of an experiment in which a computer program behaves like a ' +
+        'scientist: it asks whether every connection in a tiny nerve network is dispensable, ' +
+        'tests it, and finds the ones the rhythm cannot survive without. All clickable, and ' +
+        'explained without any prior knowledge.',
+    de: 'Dies ist die Geschichte eines Experiments, in dem ein Computerprogramm sich wie ein ' +
+        'Wissenschaftler verhält: Es fragt, ob jede Verbindung in einem winzigen Nervennetz ' +
+        'entbehrlich ist, prüft das und findet die, ohne die der Rhythmus nicht überlebt. Alles ' +
+        'zum Durchklicken und ohne Vorwissen erklärt.',
   },
   contrast_h2: { en: 'The heart of it: the same data, two points of view',
                  de: 'Der Kern des Ganzen: dieselben Daten, zwei Sichtweisen' },
@@ -84,6 +100,9 @@ const UI = {
   h_hypothesis: { en: 'The conjecture under test', de: 'Die geprüfte Vermutung' },
   h_whathappens: { en: 'What happens here', de: 'Was hier passiert' },
   h_controls: { en: 'The four controls in the result', de: 'Die vier Regler im Ergebnis' },
+  h_connections: { en: 'The connections in the result', de: 'Die Verbindungen im Ergebnis' },
+  hyp_h6_label: { en: 'Cycle-period control (H6)', de: 'Zyklusperioden-Kontrolle (H6)' },
+  hyp_h5_label: { en: 'Synapse dispensability (H5)', de: 'Synapsen-Entbehrlichkeit (H5)' },
   h_refined: { en: 'The new, sharpened finding', de: 'Der neue, geschärfte Befund' },
   h_source: { en: 'Source file', de: 'Quelldatei' },
   col_ctrl_short: { en: 'Control', de: 'Regler' },
@@ -122,9 +141,9 @@ const PRIMER = {
     <p>The advantage of a simulation: you can safely turn dials that you could never change so
        precisely in a living animal. Each cell has many such dials (specialists call them
        <em>conductances</em> — think of them as little controls that set how easily signals flow).
-       There are 31 of these controls in total. The central question of this study is:
-       <strong>which control actually sets the pace of the rhythm?</strong> Is there one decisive
-       pacemaker, or do many work together?</p>
+       There are 31 of these controls, plus the connections between the cells. The central question
+       in these case studies: <strong>which parts of this tiny network really matter — and can an AI
+       find that out in a way you can fully check?</strong></p>
     <h3>And what is the remarkable part?</h3>
     <p>The remarkable part is not the biology but <em>who</em> is doing the research. An AI language
        model (the same kind of technology as ChatGPT) takes the role of the scientist: it works out
@@ -139,12 +158,12 @@ const PRIMER = {
     </ul>
     <p>Why this is interesting: an AI that simply spits out answers is hard to check. This system, by
        contrast, is built so that you <em>can trust every number</em> — and still use the creative
-       strength of the AI. And as the following case study shows, the AI can even do something one
+       strength of the AI. And as one of the case studies shows, the AI can even do something one
        would hardly credit it with: <strong>notice that its own procedure was flawed, and correct it
-       itself.</strong> That is exactly what is traceable, step by step, below.</p>
-    <p class="primer-guide">Below you see the process in five stations. Click each one to see what
-       the system thought, did and found out. Two of the stations are <strong>self-corrections</strong>
-       — the moments in which the AI recognised its own mistake.</p>
+       itself.</strong> Everything is traceable, step by step, below.</p>
+    <p class="primer-guide">Below you can follow the process station by station. Click each one to see
+       what the system thought, did and found out. In one of the studies, two of the stations are
+       <strong>self-corrections</strong> — moments in which the AI recognised its own mistake.</p>
   `,
   de: `
     <h2>Worum geht es hier — in einfachen Worten?</h2>
@@ -158,9 +177,9 @@ const PRIMER = {
        echten Tier niemals so kontrolliert verändern könnte. Jede Zelle hat zahlreiche solcher
        Stellschrauben (die Fachleute nennen sie <em>Leitfähigkeiten</em> — man kann sie sich als
        kleine Regler vorstellen, die bestimmen, wie leicht Signale fließen). Insgesamt gibt es 31
-       solcher Regler. Die zentrale Frage dieser Studie lautet: <strong>Welcher Regler bestimmt
-       eigentlich den Takt des Rhythmus?</strong> Gibt es den einen entscheidenden Taktgeber, oder
-       arbeiten viele zusammen?</p>
+       solcher Regler, dazu die Verbindungen zwischen den Zellen. Die zentrale Frage dieser
+       Fallstudien lautet: <strong>Welche Teile dieses winzigen Netzes sind wirklich wichtig — und
+       kann eine KI das nachprüfbar herausfinden?</strong></p>
     <h3>Und was ist das Besondere?</h3>
     <p>Das Besondere ist nicht die Biologie, sondern <em>wer</em> hier forscht. Ein KI-Sprachmodell
        (dieselbe Art Technik wie bei ChatGPT) übernimmt die Rolle des Forschers: Es überlegt sich,
@@ -175,14 +194,14 @@ const PRIMER = {
     </ul>
     <p>Warum das interessant ist: Eine KI, die einfach nur Antworten ausspuckt, kann man schlecht
        überprüfen. Dieses System dagegen ist so gebaut, dass man <em>jeder Zahl trauen</em> kann — und
-       trotzdem die kreative Stärke der KI nutzt. Und wie die folgende Fallstudie zeigt, kann die KI
+       trotzdem die kreative Stärke der KI nutzt. Und wie eine der Fallstudien zeigt, kann die KI
        sogar etwas, das man ihr kaum zutraut: <strong>bemerken, dass ihr eigenes Vorgehen fehlerhaft
-       war, und es selbst korrigieren.</strong> Genau das ist unten Schritt für Schritt
+       war, und es selbst korrigieren.</strong> Alles ist unten Schritt für Schritt
        nachvollziehbar.</p>
-    <p class="primer-guide">Unten sehen Sie den Ablauf in fünf Stationen. Klicken Sie jede an, um zu
-       sehen, was das System gedacht, getan und herausgefunden hat. Zwei der Stationen sind
-       <strong>Selbstkorrekturen</strong> — die Momente, in denen die KI ihren eigenen Fehler
-       erkannte.</p>
+    <p class="primer-guide">Unten können Sie den Ablauf Station für Station verfolgen. Klicken Sie
+       jede an, um zu sehen, was das System gedacht, getan und herausgefunden hat. In einer der
+       Studien sind zwei der Stationen <strong>Selbstkorrekturen</strong> — Momente, in denen die KI
+       ihren eigenen Fehler erkannte.</p>
   `,
 };
 
@@ -209,6 +228,12 @@ function applyLanguage() {
     if (UI[key]) node.textContent = t(UI[key]);
   });
 
+  // Hypothesis-specific page header (overrides the generic h1/lede set by the loop above)
+  const h1El = document.querySelector('.site-header h1');
+  const ledeEl = document.querySelector('.site-header .lede');
+  if (h1El)   h1El.textContent   = t(activeHyp === 'h5' ? UI.h1_h5   : UI.h1);
+  if (ledeEl) ledeEl.textContent = t(activeHyp === 'h5' ? UI.lede_h5 : UI.lede);
+
   // Primer block
   document.getElementById('primer-card').innerHTML = PRIMER[LANG];
 
@@ -222,6 +247,17 @@ function applyLanguage() {
   if (timelineData) {
     document.getElementById('build-meta').textContent =
       `${t(UI.build_meta)}: ${timelineData.generatedAt.slice(0, 10)} · ${timelineData.hypothesisId}`;
+  }
+
+  // Case-study switcher: title above the timeline + button active states (H5 button hidden if no data)
+  const tt = document.getElementById('timeline-title');
+  if (tt && timelineData) tt.textContent = t(timelineData.title);
+  const bH6 = document.getElementById('hyp-h6');
+  const bH5 = document.getElementById('hyp-h5');
+  if (bH6) bH6.classList.toggle('active', activeHyp === 'h6');
+  if (bH5) {
+    bH5.classList.toggle('active', activeHyp === 'h5');
+    bH5.style.display = h5Timeline ? '' : 'none';
   }
 
   // Re-render the data-driven parts in the new language
@@ -562,10 +598,81 @@ function renderContrastGlossary() {
   return box;
 }
 
+// Colour tier from a reading tier keyword (shared by both metric kinds).
+function tierClassOf(tier) {
+  return tier === 'strong' ? 'reach-strong'
+       : tier === 'moderate' || tier === 'indispensable' ? 'reach-moderate'
+       : 'reach-weak';
+}
+
+// Descriptor-driven table (H5 and any future phase-metric hypothesis): the columns and rows
+// come from the data (keyMetrics.columns / keyMetrics.rows), so no metric names are hardcoded.
+function renderDescriptorTable(km) {
+  const table = el('table', 'mini-table');
+  const head = km.columns.map(c =>
+    `<th>${t(c.label)}${c.sub ? `<span class="th-sub">${c.sub}</span>` : ''}</th>`).join('');
+  table.innerHTML = `<thead><tr>${head}</tr></thead><tbody></tbody>`;
+  const tb = table.querySelector('tbody');
+  for (const row of km.rows) {
+    const tierClass = tierClassOf(row.readingTier);
+    const cells = km.columns.map(c => {
+      if (c.key === 'entity') {
+        const tag = row.tag ? ` <span class="ent-tag">${row.tag}</span>` : '';
+        return `<td>${row.entityLabel || row.entity}${tag}</td>`;
+      }
+      if (c.key === 'reading') return `<td class="${tierClass}">${t(row.reading)}</td>`;
+      let v = row[c.key];
+      if (c.num) v = (v == null) ? '—' : NUM(v);   // em dash for "never broke"
+      // colour the key column (the tolerated radius) by tier, like H6 colours the reach
+      const keyCol = c.key === 'toleratedRadius';
+      return `<td class="${c.num ? 'num' : ''}${keyCol ? ' ' + tierClass : ''}">${v}</td>`;
+    }).join('');
+    const tr = el('tr'); tr.innerHTML = cells; tb.appendChild(tr);
+  }
+  return table;
+}
+
+// Glossary rendered from data (H5 carries its own terms); same markup as the code-based H6 one.
+function renderGlossaryFromData(g) {
+  const box = el('div', 'metric-glossary');
+  box.appendChild(el('h5', 'glossary-head', t(g.head)));
+  const dl = el('dl', 'glossary-list');
+  for (const term of g.terms) {
+    const row = el('div', 'glossary-row');
+    row.appendChild(el('dt', 'glossary-term', t(term.term)));
+    row.appendChild(el('dd', 'glossary-def', t(term.def)));
+    dl.appendChild(row);
+  }
+  box.appendChild(dl);
+  return box;
+}
+
 function renderKeyMetrics(km, intro) {
   const wrap = el('div');
-  wrap.appendChild(el('h4', null, t(UI.h_controls)));
+  const isDescriptor = km && Array.isArray(km.columns) && Array.isArray(km.rows);
+  wrap.appendChild(el('h4', null, t(isDescriptor ? UI.h_connections : UI.h_controls)));
   if (intro) wrap.appendChild(el('p', 'metrics-intro', intro));
+
+  if (isDescriptor) {
+    // --- H5 / phase-metric path: table + glossary + cross-check all from the descriptor ---
+    wrap.appendChild(renderDescriptorTable(km));
+    if (km.glossary) wrap.appendChild(renderGlossaryFromData(km.glossary));
+    if (km.randomDirections) {
+      const rd = km.randomDirections;
+      const txt = {
+        en: `Cross-check in many random directions: aligned directions average ${NUM(rd.meanDistanceAligned)}, ` +
+            `other directions ${NUM(rd.meanDistanceMisaligned)} — practically equal. So no single connection ` +
+            `stands out; indispensability is shared.`,
+        de: `Gegenprobe in viele zufällige Richtungen: ausgerichtete Richtungen im Mittel ${NUM(rd.meanDistanceAligned)}, ` +
+            `andere Richtungen ${NUM(rd.meanDistanceMisaligned)} — praktisch gleich. Es sticht also keine einzelne ` +
+            `Verbindung heraus; die Unentbehrlichkeit verteilt sich.`,
+      };
+      wrap.appendChild(el('p', 'rd-note', t(txt)));
+    }
+    return wrap;
+  }
+
+  // --- Legacy H6 / period-metric path (unchanged) ---
   const table = el('table', 'mini-table');
   table.innerHTML = `
     <thead><tr>
@@ -659,33 +766,58 @@ function wireLanguageButtons() {
   document.getElementById('lang-de').addEventListener('click', () => { LANG = 'de'; applyLanguage(); });
 }
 
+// The sections that only belong to the H6 (period/collapse) narrative: the reference-rhythm trace,
+// the intact-vs-collapsed contrast trace, and the before/after core-contrast table. Hidden for H5.
+const H6_ONLY_SECTIONS = ['trace-intro', 'trace-contrast', 'contrast'];
+
+function setHypothesis(id) {
+  if (id === 'h5' && !h5Timeline) return;   // H5 data absent → ignore
+  activeHyp = id;
+  timelineData = (id === 'h5') ? h5Timeline : h6Timeline;
+
+  // Show H6-only sections for H6, hide them for H5. For H6, respect a missing traces file.
+  for (const secId of H6_ONLY_SECTIONS) {
+    const n = document.getElementById(secId);
+    if (!n) continue;
+    let show = (id === 'h6');
+    if (show && !traceData && (secId === 'trace-intro' || secId === 'trace-contrast')) show = false;
+    n.style.display = show ? '' : 'none';
+  }
+  applyLanguage();   // re-renders the timeline + title + switcher state in the active language
+}
+
+function wireHypothesisButtons() {
+  const b6 = document.getElementById('hyp-h6');
+  const b5 = document.getElementById('hyp-h5');
+  if (b6) b6.addEventListener('click', () => setHypothesis('h6'));
+  if (b5) b5.addEventListener('click', () => setHypothesis('h5'));
+}
+
 (async function () {
   wireLanguageButtons();
+  wireHypothesisButtons();
   try {
-    const [timeline, contrast, loop] = await Promise.all([
+    const [h6t, contrast, loop, h5t] = await Promise.all([
       loadJSON('data/h6_timeline.json'),
       loadJSON('data/h6_contrast.json'),
       loadJSON('data/h6_loop.json'),
+      loadJSON('data/h5_timeline.json').catch(() => null),   // H5 optional (Milestone 1 data)
     ]);
-    timelineData = timeline;
+    h6Timeline = h6t;
+    h5Timeline = h5t;
+    timelineData = h6Timeline;
     contrastData = contrast;
     loopData = loop;
 
-    // Voltage traces are optional — load separately so a missing file
-    // never blocks the rest of the page.
+    // Voltage traces are optional — load separately so a missing file never blocks the page.
     try {
       traceData = await loadJSON('data/h6_traces.json');
     } catch (e) {
       traceData = null;
-      // hide the trace sections if no data
-      ['trace-intro', 'trace-contrast'].forEach(id => {
-        const n = document.getElementById(id);
-        if (n) n.style.display = 'none';
-      });
     }
 
     renderContrast(contrast);
-    applyLanguage();     // renders timeline + primer + loop + traces + static strings in EN
+    setHypothesis('h6');   // sets section visibility + switcher state, then renders via applyLanguage()
   } catch (err) {
     document.getElementById('timeline').innerHTML =
       `<p style="color:#a23b2d">Error loading data: ${err.message}<br>` +

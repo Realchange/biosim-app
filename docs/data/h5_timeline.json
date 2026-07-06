@@ -1,0 +1,214 @@
+{
+  "generatedAt": "2026-07-05T19:33:35.281Z",
+  "hypothesisId": "h5-synapse-dispensable",
+  "metricKind": "phase",
+  "title": {
+    "en": "H5 — is every synapse dispensable? one refutation, one confirmation",
+    "de": "H5 — ist jede Synapse entbehrlich? eine Widerlegung, eine Bestätigung"
+  },
+  "stations": [
+    {
+      "id": "h5-round1",
+      "kind": "round",
+      "title": {
+        "en": "Round 1 — is every connection dispensable?",
+        "de": "Runde 1 — ist jede Verbindung entbehrlich?"
+      },
+      "subtitle": {
+        "en": "Each connection weakened to nothing, one at a time",
+        "de": "Jede Verbindung einzeln bis auf null abgeschwächt"
+      },
+      "plainQuestion": {
+        "en": "Can any single connection be removed without harm?",
+        "de": "Lässt sich irgendeine einzelne Verbindung folgenlos entfernen?"
+      },
+      "version": "0.55",
+      "gitSha": "490faa4",
+      "interpreter": "anthropic",
+      "hypothesis": {
+        "en": "Every single graded synapse (connection between the cells) is dispensable: it can be weakened to zero without disrupting the rhythm.",
+        "de": "Jede einzelne graduelle Synapse (Verbindung zwischen den Zellen) ist entbehrlich: Sie lässt sich bis auf null abschwächen, ohne den Rhythmus zu stören."
+      },
+      "verdict": "refuted",
+      "explanation": {
+        "en": "To test the guess, the system weakens each of the seven connections in turn, all the way down to nothing, and watches whether the three cells still fire in their fixed order and timing — the shape of the rhythm, not its speed. Most connections can be thinned out with little effect. But not all: at least three of them break the pattern almost immediately when weakened. So the blanket claim “every connection is dispensable” is refuted. The system also spots the opposite case — a second, parallel connection from AB/PD to PY that barely matters at all — and names the indispensable suspects for a sharper follow-up test.",
+        "de": "Um die Vermutung zu prüfen, schwächt das System jede der sieben Verbindungen nacheinander bis auf null ab und beobachtet, ob die drei Zellen weiterhin in ihrer festen Reihenfolge und ihrem Timing feuern — die Form des Rhythmus, nicht sein Tempo. Die meisten Verbindungen lassen sich ausdünnen, ohne dass viel passiert. Aber nicht alle: Mindestens drei zerbrechen das Muster fast sofort, sobald man sie abschwächt. Die pauschale Behauptung „jede Verbindung ist entbehrlich“ ist damit widerlegt. Das System erkennt auch den umgekehrten Fall — eine zweite, parallele Verbindung von AB/PD zu PY, die kaum eine Rolle spielt — und benennt die unentbehrlichen Verdächtigen für einen schärferen Folgetest."
+      },
+      "sourceFile": "docs/data/sources/h5-synapse-dispensable-2026-06-28T06-43-57-333Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/main/docs/data/sources/h5-synapse-dispensable-2026-06-28T06-43-57-333Z.json",
+      "refinedClaim": {
+        "en": "At least three connections — abpd→py (syn3), lp→abpd (syn4) and py→lp (syn6) — are indispensable: removing any one of them alone drives the rhythm’s shape far from normal. Only the second abpd→py connection (syn2) looks genuinely dispensable. Sharper and falsifiable: removing any of {syn3, syn4, syn6} pushes the shape distance above 1.0, while removing syn2 keeps it below 0.1.",
+        "de": "Mindestens drei Verbindungen — abpd→py (syn3), lp→abpd (syn4) und py→lp (syn6) — sind unentbehrlich: Entfernt man eine davon allein, entfernt sich die Form des Rhythmus weit vom Normalzustand. Nur die zweite abpd→py-Verbindung (syn2) wirkt wirklich entbehrlich. Schärfer und falsifizierbar: Das Entfernen einer aus {syn3, syn4, syn6} treibt den Musterabstand über 1,0, während das Entfernen von syn2 ihn unter 0,1 hält."
+      }
+    },
+    {
+      "id": "h5-round2",
+      "kind": "round",
+      "title": {
+        "en": "Round 2 — which connections are truly indispensable?",
+        "de": "Runde 2 — welche Verbindungen sind wirklich unverzichtbar?"
+      },
+      "subtitle": {
+        "en": "The refined claim, tested in both directions",
+        "de": "Die verfeinerte Behauptung, in beide Richtungen geprüft"
+      },
+      "plainQuestion": {
+        "en": "Exactly which connections can the rhythm not do without?",
+        "de": "Welche Verbindungen genau kann der Rhythmus nicht entbehren?"
+      },
+      "version": "0.55",
+      "gitSha": "490faa4",
+      "interpreter": "anthropic",
+      "hypothesis": {
+        "en": "The refined claim under test: abpd→py (syn3), lp→abpd (syn4) and py→lp (syn6) are each individually indispensable, while the second abpd→py connection (syn2) is dispensable.",
+        "de": "Die geprüfte, verfeinerte Behauptung: abpd→py (syn3), lp→abpd (syn4) und py→lp (syn6) sind jeweils einzeln unentbehrlich, während die zweite abpd→py-Verbindung (syn2) entbehrlich ist."
+      },
+      "verdict": "supported",
+      "explanation": {
+        "en": "The refined claim is put to the test — and it holds. Weaken any of the three suspect connections and the three-cell pattern breaks down well before the connection is fully gone; the second AB/PD→PY connection, by contrast, can be removed with almost no effect. There is a twist the numbers make plain: these connections are fragile to WEAKENING but tolerant of STRENGTHENING — the same connection whose loss wrecks the rhythm can be turned up considerably with little harm. A cross-check in many random directions confirms there is no single outstanding culprit; indispensability is shared among the three.",
+        "de": "Die verfeinerte Behauptung wird geprüft — und sie hält. Schwächt man eine der drei verdächtigen Verbindungen ab, zerfällt das Dreizell-Muster deutlich, bevor die Verbindung ganz verschwunden ist; die zweite AB/PD→PY-Verbindung dagegen lässt sich fast folgenlos entfernen. Ein Detail machen die Zahlen deutlich: Diese Verbindungen sind empfindlich gegen ABSCHWÄCHUNG, aber tolerant gegen VERSTÄRKUNG — dieselbe Verbindung, deren Verlust den Rhythmus zerstört, lässt sich erheblich hochdrehen, ohne großen Schaden. Eine Gegenprobe in viele zufällige Richtungen bestätigt: Es gibt keinen einzelnen herausragenden Übeltäter; die Unentbehrlichkeit verteilt sich auf die drei."
+      },
+      "plainMetricsIntro": {
+        "en": "The four connections at a glance. The key column is “Breaks at” — how far a connection can be weakened before the rhythm’s pattern falls apart. The smaller the number, the more indispensable the connection (it breaks sooner). A dash means it never broke, however far it was pushed — genuinely dispensable.",
+        "de": "Die vier Verbindungen auf einen Blick. Entscheidend ist die Spalte „Bricht bei“ — wie weit sich eine Verbindung abschwächen lässt, bevor das Muster des Rhythmus zerfällt. Je kleiner die Zahl, desto unentbehrlicher die Verbindung (sie bricht früher). Ein Strich bedeutet: Sie brach nie, egal wie weit getrieben — wirklich entbehrlich."
+      },
+      "keyMetrics": {
+        "metricKind": "phase",
+        "columns": [
+          {
+            "key": "entity",
+            "num": false,
+            "label": {
+              "en": "Connection",
+              "de": "Verbindung"
+            }
+          },
+          {
+            "key": "slopeNearZero",
+            "num": true,
+            "label": {
+              "en": "Effect strength",
+              "de": "Effektstärke"
+            },
+            "sub": "slopeNearZero"
+          },
+          {
+            "key": "toleratedRadius",
+            "num": true,
+            "label": {
+              "en": "Breaks at",
+              "de": "Bricht bei"
+            },
+            "sub": "toleratedRadius"
+          },
+          {
+            "key": "reading",
+            "num": false,
+            "label": {
+              "en": "Interpretation",
+              "de": "Deutung"
+            }
+          }
+        ],
+        "rows": [
+          {
+            "entity": "syn3:abpd->py",
+            "entityLabel": "abpd→py",
+            "tag": "syn3",
+            "slopeNearZero": 4.401,
+            "toleratedRadius": 0.25,
+            "reading": {
+              "en": "strongly indispensable",
+              "de": "stark unentbehrlich"
+            },
+            "readingTier": "strong"
+          },
+          {
+            "entity": "syn6:py->lp",
+            "entityLabel": "py→lp",
+            "tag": "syn6",
+            "slopeNearZero": 10.714,
+            "toleratedRadius": 0.4,
+            "reading": {
+              "en": "strongly indispensable",
+              "de": "stark unentbehrlich"
+            },
+            "readingTier": "strong"
+          },
+          {
+            "entity": "syn4:lp->abpd",
+            "entityLabel": "lp→abpd",
+            "tag": "syn4",
+            "slopeNearZero": 1.262,
+            "toleratedRadius": 0.8,
+            "reading": {
+              "en": "indispensable",
+              "de": "unentbehrlich"
+            },
+            "readingTier": "indispensable"
+          },
+          {
+            "entity": "syn2:abpd->py",
+            "entityLabel": "abpd→py",
+            "tag": "syn2",
+            "slopeNearZero": 0.009,
+            "toleratedRadius": null,
+            "reading": {
+              "en": "dispensable",
+              "de": "entbehrlich"
+            },
+            "readingTier": "dispensable"
+          }
+        ],
+        "randomDirections": {
+          "meanDistanceAligned": 11.629,
+          "meanDistanceMisaligned": 12.015
+        },
+        "glossary": {
+          "head": {
+            "en": "What do these numbers mean?",
+            "de": "Was bedeuten diese Zahlen?"
+          },
+          "terms": [
+            {
+              "term": {
+                "en": "Effect strength (slopeNearZero)",
+                "de": "Effektstärke (slopeNearZero)"
+              },
+              "def": {
+                "en": "How strongly the rhythm’s shape reacts when this connection is weakened a little. A unit-free comparison number — higher means the pattern is more sensitive to this connection.",
+                "de": "Wie stark die Form des Rhythmus reagiert, wenn man diese Verbindung ein kleines Stück abschwächt. Eine einheitenlose Vergleichszahl — höher heißt, das Muster ist empfindlicher für diese Verbindung."
+              }
+            },
+            {
+              "term": {
+                "en": "Breaks at (toleratedRadius)",
+                "de": "Bricht bei (toleratedRadius)"
+              },
+              "def": {
+                "en": "How far this connection can be weakened before the three-cell pattern falls apart. The smaller the number, the more indispensable the connection (it breaks sooner). A dash means it never broke, however far it was pushed — genuinely dispensable.",
+                "de": "Wie weit sich diese Verbindung abschwächen lässt, bevor das Dreizell-Muster zerfällt. Je kleiner die Zahl, desto unentbehrlicher die Verbindung (sie bricht früher). Ein Strich bedeutet: Sie brach nie, egal wie weit getrieben — wirklich entbehrlich."
+              }
+            },
+            {
+              "term": {
+                "en": "Shape distance (phase)",
+                "de": "Musterabstand (Phase)"
+              },
+              "def": {
+                "en": "The yardstick used here measures how much the SHAPE of the rhythm changed — the order and relative timing of the three cells — independent of its speed. A rhythm that merely runs faster or slower does not count as disrupted; only a real change of pattern does.",
+                "de": "Der hier verwendete Maßstab misst, wie stark sich die FORM des Rhythmus änderte — die Reihenfolge und das relative Timing der drei Zellen — unabhängig vom Tempo. Ein Rhythmus, der nur schneller oder langsamer läuft, gilt nicht als gestört; nur eine echte Musteränderung zählt."
+              }
+            }
+          ]
+        }
+      },
+      "sourceFile": "docs/data/sources/h5-synapse-dispensable-2026-06-28T11-43-56-921Z.json",
+      "permalink": "https://github.com/Realchange/biosim-app/blob/main/docs/data/sources/h5-synapse-dispensable-2026-06-28T11-43-56-921Z.json",
+      "refinedClaim": {
+        "en": "syn3, syn4 and syn6 are indispensable, with a directional asymmetry: weakening breaks the rhythm early (tolerated reduction radius below ~0.3, ~1.0 and ~0.5 respectively), while strengthening is tolerated much further. syn2 stays below a shape distance of 0.1 under any perturbation — genuinely dispensable. This remains open to disproof by a single-connection removal that leaves the shape distance below 1.0.",
+        "de": "syn3, syn4 und syn6 sind unentbehrlich, mit einer Richtungs-Asymmetrie: Abschwächung bricht den Rhythmus früh (tolerierter Reduktionsradius unter ~0,3, ~1,0 bzw. ~0,5), während Verstärkung viel weiter toleriert wird. syn2 bleibt unter einem Musterabstand von 0,1 bei jeder Störung — wirklich entbehrlich. Das bleibt widerlegbar durch das Entfernen einer einzelnen Verbindung, das den Musterabstand unter 1,0 lässt."
+      }
+    }
+  ]
+}

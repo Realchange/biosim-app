@@ -1,0 +1,90 @@
+{
+  "hypothesisId": "h5-synapse-dispensable",
+  "summary": "Test whether each individual graded synapse in the pyloric network is dispensable by sweeping each synaptic conductance independently toward zero (and beyond) across several orders of magnitude, plus a random-directions probe in synaptic-only space to catch joint fragility not visible in single-parameter sweeps.",
+  "distance": "phase",
+  "digest": {
+    "hypothesisId": "h5-synapse-dispensable",
+    "metricKind": "phase",
+    "experiments": [
+      {
+        "kind": "sweep",
+        "label": "sweep syn0:abpd->lp",
+        "metrics": {
+          "slopeNearZero": 2.039,
+          "maxDistance": 0.393
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn1:abpd->lp",
+        "metrics": {
+          "slopeNearZero": 1.221,
+          "maxDistance": 0.647
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn4:lp->abpd",
+        "metrics": {
+          "toleratedRadius": 1,
+          "slopeNearZero": 1.476,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn5:lp->py",
+        "metrics": {
+          "slopeNearZero": 0.772,
+          "maxDistance": 0.397
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn6:py->lp",
+        "metrics": {
+          "toleratedRadius": 1,
+          "slopeNearZero": 2.06,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn2:abpd->py",
+        "metrics": {
+          "slopeNearZero": 0.009,
+          "maxDistance": 0.096
+        }
+      },
+      {
+        "kind": "sweep",
+        "label": "sweep syn3:abpd->py",
+        "metrics": {
+          "toleratedRadius": 0.4,
+          "slopeNearZero": 11.416,
+          "maxDistance": 15
+        }
+      },
+      {
+        "kind": "randomDirections",
+        "label": "randomDirections r=3 n=200",
+        "metrics": {
+          "meanDistanceAligned": 13.719,
+          "meanDistanceMisaligned": 14.346,
+          "fractionAligned": 0.015,
+          "fractionMisaligned": 0
+        }
+      }
+    ]
+  },
+  "interpretation": {
+    "verdict": "refuted",
+    "evidence": "The hypothesis claims each individual graded synapse is dispensable (i.e., can be swept to zero without disrupting the rhythm). The data falsify this for at least three synapses: syn3:abpd->py has slopeNearZero=11.416 and toleratedRadius=0.4 (extremely stiff, rhythm breaks very close to nominal conductance), syn6:py->lp has slopeNearZero=2.06 and toleratedRadius=1 with maxDistance=15 (rhythm collapses), and syn4:lp->abpd has slopeNearZero=1.476 and toleratedRadius=1 with maxDistance=15 (rhythm collapses). These synapses are clearly not dispensable. By contrast, syn2:abpd->py shows slopeNearZero=0.009 and maxDistance=0.096, suggesting it is nearly dispensable. The random-directions probe with meanDistanceAligned=13.719 and fractionAligned=0.015 shows that almost any joint perturbation in synaptic space at radius=3 also destroys the rhythm, confirming broad fragility rather than robustness. The hypothesis of universal dispensability is falsified by the high-slope, low-toleratedRadius synapses.",
+    "refinedClaim": "The pyloric rhythm is critically dependent on at least syn3:abpd->py (toleratedRadius≈0.4, slope≈11.4), syn4:lp->abpd, and syn6:py->lp (both with maxDistance=15 at radius=1), making these synapses indispensable; only syn2:abpd->py (slope≈0.009, maxDistance≈0.096) approaches true dispensability. A sharper falsifiable claim: removing any one of {syn3, syn4, syn6} individually will drive phase-shape distance above 1.0, while removing syn2 alone will not exceed 0.1."
+  },
+  "provenance": {
+    "codeVersion": "0.55",
+    "gitSha": "490faa4",
+    "interpreter": "anthropic"
+  }
+}

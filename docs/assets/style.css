@@ -299,3 +299,18 @@ body {
   color: var(--fg, #222); margin: 0 0 3px;
 }
 .glossary-def { margin: 0; line-height: 1.5; color: var(--muted); }
+
+/* Case-study switcher (H6 / H5) above the timeline */
+.hyp-switch {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 8px;
+  overflow: hidden; background: #fff; margin: 8px 0 6px;
+}
+.hyp-switch button {
+  font-family: var(--mono); font-size: 0.78rem; font-weight: 600;
+  padding: 8px 14px; border: none; background: #fff; cursor: pointer; color: var(--muted);
+}
+.hyp-switch button + button { border-left: 1px solid var(--line); }
+.hyp-switch button.active { background: var(--accent); color: #fff; }
+.timeline-title { font-size: 1.15rem; margin: 6px 0 14px; }
+/* raw-id tag next to a connection label in the phase-metric table */
+.ent-tag { font-family: var(--mono); font-size: 0.68rem; color: #999; }
