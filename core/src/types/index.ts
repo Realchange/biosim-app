@@ -120,6 +120,17 @@ export interface Electrode {
   compartment: Compartment
 }
 
+/** A named, saveable snapshot of a whole simulation (parameters + stimulation + wiring). */
+export interface SavedSetup {
+  id: string                 // stable id; user: crypto uuid, bundled: 'bundled:<slug>'
+  name: string               // user-visible label
+  presetName: string | null  // base preset for grouping; null → "Sonstige"
+  network: Network           // the full snapshot (compartments stripped)
+  source: 'bundled' | 'user'
+  createdAt: string          // ISO 8601
+  appVersion: string         // provenance
+}
+
 export const COMPARTMENT_COLORS: Record<Compartment, string> = {
   soma:  '#3fb950',   // green
   dend1: '#f0883e',   // orange
