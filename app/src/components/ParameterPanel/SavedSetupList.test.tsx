@@ -35,4 +35,15 @@ describe('SavedSetupList', () => {
     fireEvent.click(screen.getByTitle('Löschen'))
     expect(useNetworkStore.getState().userSetups.find(s => s.id === saved.id)).toBeUndefined()
   })
+
+  it('opens an explanation of local vs file saving via the ⓘ button, and closes it', () => {
+    render(<SavedSetupList onShowInfo={() => {}} />)
+    // Not shown until opened.
+    expect(screen.queryByText('Lokal speichern (dieser Browser)')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTitle('Erklärung: Zustände speichern & weitergeben'))
+    expect(screen.getByText('Lokal speichern (dieser Browser)')).toBeInTheDocument()
+    expect(screen.getByText('Als Datei speichern (weitergeben)')).toBeInTheDocument()
+    fireEvent.click(screen.getByTitle('Schließen'))
+    expect(screen.queryByText('Lokal speichern (dieser Browser)')).not.toBeInTheDocument()
+  })
 })

@@ -9,4 +9,17 @@
 .lock { color: #8b949e; font-size: 12px; padding: 0 4px; }
 .empty { color: #6e7681; font-size: 11px; margin: 3px 0 3px 22px; }
 .actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.actionsHead { display: flex; align-items: center; justify-content: space-between; }
+.actionsLabel { color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .actionBtn { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 6px 8px; cursor: pointer; font-size: 12px; }
+
+/* Explanation modal (local vs file saving) */
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal { background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 8px; max-width: 460px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 18px 20px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+.modalHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.modalTitle { font-size: 15px; font-weight: 600; color: #e6edf3; }
+.close { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px; line-height: 1; }
+.infoIntro { font-size: 12px; line-height: 1.5; color: #c9d1d9; margin: 0 0 14px; }
+.infoBlock { margin-bottom: 12px; }
+.infoLabel { font-size: 12px; font-weight: 600; color: #e6edf3; margin-bottom: 3px; }
+.infoBody { font-size: 12px; line-height: 1.5; color: #9da7b1; margin: 0; }

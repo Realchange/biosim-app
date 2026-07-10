@@ -14,6 +14,7 @@ export function SavedSetupList({ onShowInfo }: { onShowInfo: (presetName: string
     userSetups, currentPresetName, loadNetwork, loadSetup, deleteSetup, exportSetup, importSetup, saveCurrentSetup,
   } = useNetworkStore()
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [showInfo, setShowInfo] = useState(false)
 
   const presetNames = PRESETS.map(p => p.name)
   const all = [...BUNDLED_SETUPS, ...userSetups]
@@ -88,6 +89,11 @@ export function SavedSetupList({ onShowInfo }: { onShowInfo: (presetName: string
       )}
 
       <div className={styles.actions}>
+        <div className={styles.actionsHead}>
+          <span className={styles.actionsLabel}>{t.params.savedStates}</span>
+          <button className={styles.infoButton} title={t.params.savedInfoBtnTitle}
+            onClick={() => setShowInfo(true)}>ⓘ</button>
+        </div>
         <button className={styles.actionBtn} onClick={onSave}>{t.params.saveCurrent}</button>
         <button className={styles.actionBtn} onClick={async () => {
           try { await importSetup() } catch (e) {
@@ -95,6 +101,31 @@ export function SavedSetupList({ onShowInfo }: { onShowInfo: (presetName: string
           }
         }}>{t.params.importFileBtn}</button>
       </div>
+
+      {showInfo && (
+        <div className={styles.overlay} onClick={() => setShowInfo(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalTitle}>{t.params.savedInfoTitle}</span>
+              <button className={styles.close} title={t.params.savedInfoClose}
+                onClick={() => setShowInfo(false)}>✕</button>
+            </div>
+            <p className={styles.infoIntro}>{t.params.savedInfoIntro}</p>
+            <div className={styles.infoBlock}>
+              <div className={styles.infoLabel}>{t.params.savedInfoLocalLabel}</div>
+              <p className={styles.infoBody}>{t.params.savedInfoLocalBody}</p>
+            </div>
+            <div className={styles.infoBlock}>
+              <div className={styles.infoLabel}>{t.params.savedInfoFileLabel}</div>
+              <p className={styles.infoBody}>{t.params.savedInfoFileBody}</p>
+            </div>
+            <div className={styles.infoBlock}>
+              <div className={styles.infoLabel}>{t.params.savedInfoBundledLabel}</div>
+              <p className={styles.infoBody}>{t.params.savedInfoBundledBody}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

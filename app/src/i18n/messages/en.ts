@@ -182,6 +182,17 @@ export const en = {
     deleteTitle: 'Delete',
     bundledTitle: 'Bundled example (read-only)',
     loadSetupTitle: 'Load this state',
+    savedStates: 'Saved states',
+    savedInfoBtnTitle: 'Explanation: saving & sharing states',
+    savedInfoTitle: 'Saving & sharing states',
+    savedInfoIntro: 'A saved state is a snapshot of all current settings — neuron parameters, current stimulation and synapse strengths — under a name. It lets you restore a specific simulation exactly, any time.',
+    savedInfoLocalLabel: 'Save locally (this browser)',
+    savedInfoLocalBody: 'With "+ Save current state" the state stays in this browser and appears in the list — even after a reload. But it lives only on this device/browser and is not shared automatically.',
+    savedInfoFileLabel: 'Save as file (to share)',
+    savedInfoFileBody: 'With ⬇ you export a state as a .biosim.json file. You can pass this file to others (e.g. students or colleagues) or copy it to another device. Recipients bring it into their own list with ⬆ "Import file".',
+    savedInfoBundledLabel: 'Bundled examples (🔒)',
+    savedInfoBundledBody: 'States with a lock are shipped with the app (e.g. the collapsed rhythm). They are available immediately and cannot be changed or deleted — only loaded.',
+    savedInfoClose: 'Close',
   },
 
   stg: {
