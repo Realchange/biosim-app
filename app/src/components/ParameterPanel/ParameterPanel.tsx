@@ -9,13 +9,13 @@ import { EditorPalette } from './EditorPalette'
 import type { LIFParams, HHParams, STGParams, AppMode } from '@biosim/core'
 import { DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_STG_PARAMS } from '@biosim/core'
 import type { NeuronModel } from '../../store/networkStore'
-import { PRESETS } from '@biosim/core'
 import { usePresetInfo } from '../../presets/info'
 import { useT } from '../../i18n'
+import { SavedSetupList } from './SavedSetupList'
 import styles from './ParameterPanel.module.css'
 
 export function ParameterPanel() {
-  const { neurons, synapses, mode, selectedId, setMode, loadNetwork, clearNetwork } = useNetworkStore()
+  const { neurons, synapses, mode, selectedId, setMode, clearNetwork } = useNetworkStore()
   const t = useT()
   const PRESET_INFO = usePresetInfo()
   const [infoPreset, setInfoPreset] = useState<string | null>(null)
@@ -55,19 +55,7 @@ export function ParameterPanel() {
 
       <div className={styles.section}>
         <div className={styles.label}>{t.params.examples}</div>
-        {PRESETS.map(preset => (
-          <div key={preset.name} className={styles.presetRow}>
-            <button className={styles.presetButton}
-              onClick={() => loadNetwork(preset.network)}>
-              ▶ {PRESET_INFO[preset.name]?.name ?? preset.name}
-            </button>
-            {PRESET_INFO[preset.name] && (
-              <button className={styles.infoButton}
-                title={t.params.presetInfoTitle}
-                onClick={() => setInfoPreset(preset.name)}>ⓘ</button>
-            )}
-          </div>
-        ))}
+        <SavedSetupList onShowInfo={setInfoPreset} />
       </div>
 
       {selectedNeuron && (
