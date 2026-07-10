@@ -171,6 +171,18 @@ export const en = {
     modelOptGraded: 'Non-spiking',
     electrodeHint: '💡 Click the soma or a dendrite of the neuron to place a recording electrode.',
     synapse: 'Synapse',
+    savedStates: 'Saved states',
+    otherGroup: 'Other (no preset)',
+    saveCurrent: '+ Save current state',
+    importFileBtn: '⬆ Import file',
+    noSaved: 'no saved states',
+    namePrompt: 'Name for this state:',
+    overwriteConfirm: (name: string) => `"${name}" already exists. Overwrite?`,
+    deleteConfirm: (name: string) => `Delete "${name}"?`,
+    exportTitle: 'Export as file',
+    deleteTitle: 'Delete',
+    bundledTitle: 'Bundled example (read-only)',
+    loadSetupTitle: 'Load this state',
   },
 
   stg: {

@@ -172,6 +172,18 @@ export const de: Messages = {
     modelOptGraded: 'Nicht-spikend',
     electrodeHint: '💡 Klicke auf Soma oder Dendrit im Neuron um eine Messelektrode zu setzen.',
     synapse: 'Synapse',
+    savedStates: 'Gespeicherte Zustände',
+    otherGroup: 'Sonstige (ohne Preset)',
+    saveCurrent: '+ Aktuellen Zustand speichern',
+    importFileBtn: '⬆ Datei importieren',
+    noSaved: 'keine gespeicherten Zustände',
+    namePrompt: 'Name für diesen Zustand:',
+    overwriteConfirm: (name: string) => `„${name}" existiert bereits. Überschreiben?`,
+    deleteConfirm: (name: string) => `„${name}" löschen?`,
+    exportTitle: 'Als Datei exportieren',
+    deleteTitle: 'Löschen',
+    bundledTitle: 'Mitgeliefertes Beispiel (schreibgeschützt)',
+    loadSetupTitle: 'Diesen Zustand laden',
   },
 
   stg: {
