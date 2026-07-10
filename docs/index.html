@@ -4,13 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BIOSIM — H6: An AI that corrects its own thinking</title>
-  <link rel="stylesheet" href="assets/style.css?v=6844713b8e" />
+  <link rel="stylesheet" href="assets/style.css?v=74811693c0" />
 </head>
 <body>
   <div class="lang-switch" role="group" aria-label="Language">
     <button id="lang-en" class="active" type="button">EN</button>
     <button id="lang-de" type="button">DE</button>
   </div>
+
+  <nav class="site-nav" aria-label="Sections">
+    <div class="wrap">
+      <span class="site-nav-brand">BIOSIM</span>
+      <a href="#overview" data-i18n="nav_overview">Overview</a>
+      <a href="#loop" data-i18n="nav_loop">The loop</a>
+      <a href="#timeline" data-i18n="nav_case">Case study</a>
+      <a href="#pipeline" data-i18n="nav_pipeline">Pipeline</a>
+    </div>
+  </nav>
 
   <header class="site-header">
     <div class="wrap">
@@ -22,7 +32,7 @@
   </header>
 
   <main class="wrap">
-    <section class="primer" aria-label="Overview">
+    <section id="overview" class="primer" aria-label="Overview">
       <div class="primer-card" id="primer-card"></div>
     </section>
 
@@ -80,6 +90,13 @@
       <div id="contrast-glossary"></div>
       <p id="contrast-provenance" class="provenance"></p>
     </section>
+
+    <section id="pipeline" class="pipeline" aria-label="Pipeline">
+      <h2 id="pipeline-title"></h2>
+      <p id="pipeline-intro" class="pipeline-intro"></p>
+      <div id="pipeline-table" class="pipeline-table-wrap"></div>
+      <div id="pipeline-callouts" class="pl-callouts"></div>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -89,6 +106,6 @@
     </div>
   </footer>
 
-  <script src="assets/app.js?v=edc401bf09"></script>
+  <script src="assets/app.js?v=3e729061bd"></script>
 </body>
 </html>
