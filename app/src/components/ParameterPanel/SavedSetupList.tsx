@@ -4,6 +4,7 @@ import { useNetworkStore } from '../../store/networkStore'
 import { useT } from '../../i18n'
 import { usePresetInfo } from '../../presets/info'
 import { setupsForPreset, otherSetups, findUserSetup } from '../../utils/savedSetups'
+import { CancelledError } from '../../utils/fileIO'
 import styles from './SavedSetupList.module.css'
 
 export function SavedSetupList({ onShowInfo }: { onShowInfo: (presetName: string) => void }) {
@@ -88,7 +89,11 @@ export function SavedSetupList({ onShowInfo }: { onShowInfo: (presetName: string
 
       <div className={styles.actions}>
         <button className={styles.actionBtn} onClick={onSave}>{t.params.saveCurrent}</button>
-        <button className={styles.actionBtn} onClick={() => { void importSetup() }}>{t.params.importFileBtn}</button>
+        <button className={styles.actionBtn} onClick={async () => {
+          try { await importSetup() } catch (e) {
+            if (!(e instanceof CancelledError)) alert((e as Error).message)
+          }
+        }}>{t.params.importFileBtn}</button>
       </div>
     </div>
   )

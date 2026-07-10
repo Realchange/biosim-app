@@ -1,5 +1,6 @@
 import type { Network, SavedSetup } from '@biosim/core'
 import { PRESETS, APP_VERSION } from '@biosim/core'
+import { v4 as uuidv4 } from 'uuid'
 
 export const STORAGE_KEY = 'biosim.savedSetups.v1'
 
@@ -29,7 +30,7 @@ export function findUserSetup(name: string, presetName: string | null): SavedSet
 
 export function saveUserSetup(name: string, presetName: string | null, network: Network): SavedSetup {
   const setup: SavedSetup = {
-    id: crypto.randomUUID(),
+    id: uuidv4(),
     name,
     presetName,
     network: stripState(network),

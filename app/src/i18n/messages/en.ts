@@ -171,7 +171,6 @@ export const en = {
     modelOptGraded: 'Non-spiking',
     electrodeHint: '💡 Click the soma or a dendrite of the neuron to place a recording electrode.',
     synapse: 'Synapse',
-    savedStates: 'Saved states',
     otherGroup: 'Other (no preset)',
     saveCurrent: '+ Save current state',
     importFileBtn: '⬆ Import file',

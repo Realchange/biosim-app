@@ -172,7 +172,6 @@ export const de: Messages = {
     modelOptGraded: 'Nicht-spikend',
     electrodeHint: '💡 Klicke auf Soma oder Dendrit im Neuron um eine Messelektrode zu setzen.',
     synapse: 'Synapse',
-    savedStates: 'Gespeicherte Zustände',
     otherGroup: 'Sonstige (ohne Preset)',
     saveCurrent: '+ Aktuellen Zustand speichern',
     importFileBtn: '⬆ Datei importieren',
