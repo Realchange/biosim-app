@@ -314,3 +314,68 @@ body {
 .timeline-title { font-size: 1.15rem; margin: 6px 0 14px; }
 /* raw-id tag next to a connection label in the phase-metric table */
 .ent-tag { font-family: var(--mono); font-size: 0.68rem; color: #999; }
+
+/* Anchored jumps clear the sticky nav bar */
+html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+
+/* Section nav bar (sticky top) */
+.site-nav {
+  position: sticky; top: 0; z-index: 90;
+  background: rgba(251, 251, 249, 0.92);
+  backdrop-filter: saturate(1.2) blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.site-nav .wrap {
+  display: flex; align-items: center; gap: 20px; height: 48px;
+  padding-right: 96px;   /* keep links clear of the fixed language switch */
+  overflow-x: auto;
+}
+.site-nav-brand {
+  font-family: var(--mono); font-weight: 700; font-size: 0.78rem;
+  letter-spacing: 0.1em; color: var(--accent); white-space: nowrap;
+}
+.site-nav a {
+  font-family: var(--mono); font-size: 0.8rem; color: var(--muted);
+  text-decoration: none; white-space: nowrap;
+  padding: 4px 0; border-bottom: 2px solid transparent;
+}
+.site-nav a:hover { color: var(--ink); border-bottom-color: var(--accent-soft); }
+
+/* Pipeline section (plan → computed number) */
+.pipeline { padding: 32px 0 60px; border-top: 1px solid var(--line); }
+.pipeline h2 { font-size: 1.5rem; margin: 24px 0 12px; font-weight: 600; }
+.pipeline-intro { font-size: 1.02rem; color: #444; margin: 0 0 20px; }
+
+.pipeline-table-wrap { width: 100%; overflow-x: auto; }
+.pipeline-table {
+  width: 100%; border-collapse: collapse; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+}
+.pipeline-table th, .pipeline-table td {
+  padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line);
+  vertical-align: top; font-size: 0.92rem;
+}
+.pipeline-table tr:last-child td { border-bottom: none; }
+.pipeline-table th {
+  font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted); background: #faf7f2;
+}
+.pipeline-table td.pl-num, .pipeline-table th.pl-num {
+  font-family: var(--mono); color: var(--muted); text-align: right; width: 1%; white-space: nowrap;
+}
+.pipeline-table code { font-family: var(--mono); font-size: 0.82em; }
+.pl-step code { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.pl-ref code { color: var(--accent); white-space: nowrap; }
+.pl-what { color: #333; }
+.pipeline-table tr.pl-hot td { background: #eaf3ec; }        /* the two rows that compute numbers */
+.pipeline-table tr.pl-hot .pl-step code { color: var(--smooth); }
+
+.pl-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+@media (max-width: 640px) { .pl-callouts { grid-template-columns: 1fr; } }
+.pl-callout {
+  background: var(--panel); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 18px;
+}
+.pl-callout.seam { border-left-color: var(--smooth); }
+.pl-callout h3 { margin: 0 0 6px; font-size: 1.0rem; font-weight: 600; }
+.pl-callout p { margin: 0; font-size: 0.95rem; color: #333; }

@@ -27,6 +27,11 @@ function t(val) {
 const UI = {
   eyebrow: { en: 'BIOSIM · An AI system as a scientist',
              de: 'BIOSIM · Ein KI-System als Wissenschaftler' },
+
+  nav_overview: { en: 'Overview',   de: 'Überblick' },
+  nav_loop:     { en: 'The loop',   de: 'Der Loop' },
+  nav_case:     { en: 'Case study', de: 'Fallstudie' },
+  nav_pipeline: { en: 'Pipeline',   de: 'Pipeline' },
   // Page header is hypothesis-specific (H6 default here; H5 variants below). Set in applyLanguage().
   h1: { en: 'How an AI notices and corrects its own mistake',
         de: 'Wie eine KI ihren eigenen Denkfehler bemerkt und korrigiert' },
@@ -205,6 +210,94 @@ const PRIMER = {
   `,
 };
 
+/* ---- Pipeline explainer (static content, both languages) ----------------- */
+/* The exact chain that turns an approved JSON plan into one computed, stored
+   number. `step`/`ref` are code identifiers (language-independent); only the
+   `what` prose is bilingual. The two `hot` rows are where numbers are computed. */
+const PIPELINE = {
+  title: { en: 'Pipeline — from plan to a computed number',
+           de: 'Ablauf — vom Plan zur berechneten Zahl' },
+  intro: {
+    en: 'How does a hypothesis (e.g. H5, H6) turn into computed numbers? The language model only ' +
+        'proposes an experiment plan; deterministic code does the rest. Below is the exact chain from ' +
+        'the approved JSON plan to a single stored result — the one step that actually runs the ' +
+        'simulation is highlighted.',
+    de: 'Wie wird aus einer Hypothese (z. B. H5, H6) eine berechnete Zahl? Das Sprachmodell schlägt nur ' +
+        'einen Versuchsplan vor; alles Rechnen macht deterministischer Code. Unten steht die exakte Kette ' +
+        'vom freigegebenen JSON-Plan bis zu einem gespeicherten Ergebnis — der eine Schritt, der die ' +
+        'Simulation wirklich startet, ist hervorgehoben.',
+  },
+  cols: {
+    n:    { en: '#',           de: '#' },
+    step: { en: 'Step',        de: 'Schritt' },
+    ref:  { en: 'File · line', de: 'Datei · Zeile' },
+    what: { en: 'What happens', de: 'Was passiert' },
+  },
+  steps: [
+    { n: '1', step: 'Approved plan (JSON)', ref: 'results/plans/*.json', hot: false,
+      what: { en: 'The released experiment plan. Each experiment names one manipulation (e.g. a sweep of one conductance) — data only, nothing is computed yet.',
+              de: 'Der genehmigte Versuchsplan. Jedes Experiment nennt eine Manipulation (z. B. einen Sweep eines Leitwerts) — nur Daten, noch wird nichts gerechnet.' } },
+    { n: '2', step: 'runExperiment()', ref: 'runner.ts:62', hot: false,
+      what: { en: 'The runner takes one manipulation from the plan and prepares the run: it builds the reference rhythm and the base parameter vector.',
+              de: 'Der Runner nimmt eine Manipulation aus dem Plan und bereitet den Lauf vor: Referenzrhythmus und Basis-Parametervektor werden gebaut.' } },
+    { n: '3', step: 'toVector()', ref: 'paramVector.ts:51', hot: false,
+      what: { en: 'Converts the reference network into a vector of numbers in log10-conductance space (the 8 STG conductances per cell + each graded synapse).',
+              de: 'Wandelt das Referenznetzwerk in einen Zahlenvektor im log10-Leitwert-Raum um (8 STG-Leitwerte pro Zelle + jede graduelle Synapse).' } },
+    { n: '4', step: 'expand() → primitive', ref: 'runner.ts:39 · sweep.ts:17', hot: false,
+      what: { en: 'The manipulation is unfolded into many concrete parameter settings. A sweep with 41 steps becomes 41 vectors, each nudging one conductance.',
+              de: 'Die Manipulation wird in viele konkrete Reglerstellungen aufgefaltet. Ein Sweep mit 41 Schritten wird zu 41 Vektoren, jeder verstellt einen Leitwert.' } },
+    { n: '5', step: 'loop over points', ref: 'runner.ts:69', hot: false,
+      what: { en: 'The outer loop walks through every one of those settings — one simulation each.',
+              de: 'Die äußere Schleife geht jede dieser Stellungen durch — je eine Simulation.' } },
+    { n: '6', step: 'toNetwork()', ref: 'paramVector.ts:67', hot: false,
+      what: { en: 'Turns one vector back into a real network object with the changed conductance values, ready to simulate.',
+              de: 'Macht aus einem Vektor wieder ein echtes Netzwerk-Objekt mit den geänderten Leitwerten, bereit zur Simulation.' } },
+    { n: '7', step: 'summaryStatsOf(net)', ref: 'runner.ts:71', hot: true,
+      what: { en: '★ The line that starts a simulation. Called once per setting. Everything before is preparation; everything after is read-out.',
+              de: '★ Die Zeile, die eine Simulation startet. Einmal pro Stellung aufgerufen. Alles davor ist Vorbereitung, alles danach Auswertung.' } },
+    { n: '8', step: 'runVoltageTraces()', ref: 'sim.ts:19', hot: false,
+      what: { en: 'The actual simulator. Runs 6000 ms of cell activity in 0.05 ms steps = 120,000 time steps, producing a voltage-over-time trace for all three cells.',
+              de: 'Der eigentliche Simulator. Rechnet 6000 ms Zellaktivität in 0,05-ms-Schritten = 120.000 Zeitschritte und liefert den Spannungsverlauf aller drei Zellen.' } },
+    { n: '9', step: 'networkStep() ×120,000', ref: 'network.ts:147', hot: true,
+      what: { en: '★ Where the physics is computed: for each 0.05 ms tick it solves the ion-channel equations of every cell and returns the new membrane voltages.',
+              de: '★ Hier wird die Physik gerechnet: pro 0,05-ms-Tick werden die Ionenkanal-Gleichungen jeder Zelle gelöst und die neuen Membranspannungen zurückgegeben.' } },
+    { n: '10', step: 'summaryStatsFromTraces()', ref: 'metrics.ts:96', hot: false,
+      what: { en: 'Reads the finished trace: finds bursts and spikes and boils them down to rhythm features — cycle period, burst durations, duty cycles, phases.',
+              de: 'Liest den fertigen Verlauf: findet Bursts und Spikes und verdichtet sie zu Rhythmus-Merkmalen — Zyklusdauer, Burst-Längen, Duty Cycles, Phasen.' } },
+    { n: '11', step: 'metric.evaluate()', ref: 'runner.ts:72', hot: false,
+      what: { en: 'Compares those features to the reference and returns one normalised distance (plus a collapsed flag if the rhythm died).',
+              de: 'Vergleicht diese Merkmale mit der Referenz und gibt eine normierte Distanz zurück (plus collapsed-Flag, falls der Rhythmus zusammenbrach).' } },
+    { n: '12', step: 'RunResult stored', ref: 'runner.ts:73', hot: false,
+      what: { en: 'The result is saved with provenance (software version, git revision, timestamp). All runs together are condensed into the digest the LLM interpreter later reads.',
+              de: 'Das Ergebnis wird mit Provenienz gespeichert (Softwareversion, Git-Revision, Zeitstempel). Alle Läufe zusammen werden zum Digest verdichtet, den später der LLM-Interpreter liest.' } },
+  ],
+  loops: {
+    title: { en: 'Two nested loops', de: 'Zwei ineinander verschachtelte Schleifen' },
+    body: {
+      en: 'Outer loop (runner.ts): over the parameter settings from the plan — e.g. 41 points. Inner loop ' +
+          '(sim.ts): over time — 120,000 ticks per point. One 41-step sweep is therefore ≈ 5 million ' +
+          'networkStep calls; the H5 study with 487 simulations was ≈ 58 million — all deterministic ' +
+          '(noise = 0), so a run reproduces bit-for-bit at the same version.',
+      de: 'Äußere Schleife (runner.ts): über die Reglerstellungen aus dem Plan — z. B. 41 Punkte. Innere ' +
+          'Schleife (sim.ts): über die Zeit — 120.000 Ticks pro Punkt. Ein Sweep mit 41 Schritten sind also ' +
+          '≈ 5 Millionen networkStep-Aufrufe; die H5-Studie mit 487 Simulationen ≈ 58 Millionen — alle ' +
+          'deterministisch (noise = 0), ein Lauf ist bei gleicher Version bit-genau reproduzierbar.',
+    },
+  },
+  seam: {
+    title: { en: 'The exact seam', de: 'Die genaue Naht' },
+    body: {
+      en: 'The JSON plan only says WHAT to do. The model is actually executed inside sim.ts (the loop over ' +
+          'networkStep), triggered by the single line summaryStatsOf(net) in runner.ts — once for every ' +
+          'point a primitive produced from the plan. That is the seam between “plan” and “computed number”.',
+      de: 'Der JSON-Plan sagt nur, WAS zu tun ist. Das Modell wird tatsächlich in sim.ts ausgeführt (die ' +
+          'Schleife über networkStep), ausgelöst durch die eine Zeile summaryStatsOf(net) in runner.ts — ' +
+          'einmal für jeden Punkt, den ein Primitive aus dem Plan erzeugt hat. Das ist die Naht zwischen ' +
+          '„Plan“ und „berechneter Zahl“.',
+    },
+  },
+};
+
 async function loadJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Could not load ${url} (${res.status})`);
@@ -236,6 +329,9 @@ function applyLanguage() {
 
   // Primer block
   document.getElementById('primer-card').innerHTML = PRIMER[LANG];
+
+  // Pipeline explainer (static content, re-rendered so it follows the language)
+  renderPipeline();
 
   // Loop diagram
   if (loopData) renderLoop(loopData);
@@ -274,6 +370,32 @@ function applyLanguage() {
   // Toggle button active states
   document.getElementById('lang-en').classList.toggle('active', LANG === 'en');
   document.getElementById('lang-de').classList.toggle('active', LANG === 'de');
+}
+
+/* ---- Pipeline explainer table -------------------------------------------- */
+function renderPipeline() {
+  const titleEl = document.getElementById('pipeline-title');
+  if (!titleEl) return;   // section not present
+  titleEl.textContent = t(PIPELINE.title);
+  document.getElementById('pipeline-intro').textContent = t(PIPELINE.intro);
+
+  const c = PIPELINE.cols;
+  const rows = PIPELINE.steps.map((s) =>
+    `<tr class="${s.hot ? 'pl-hot' : ''}">` +
+    `<td class="pl-num">${s.n}</td>` +
+    `<td class="pl-step"><code>${s.step}</code></td>` +
+    `<td class="pl-ref"><code>${s.ref}</code></td>` +
+    `<td class="pl-what">${t(s.what)}</td>` +
+    `</tr>`).join('');
+  document.getElementById('pipeline-table').innerHTML =
+    `<table class="pipeline-table">` +
+    `<thead><tr>` +
+    `<th class="pl-num">${t(c.n)}</th><th>${t(c.step)}</th><th>${t(c.ref)}</th><th>${t(c.what)}</th>` +
+    `</tr></thead><tbody>${rows}</tbody></table>`;
+
+  document.getElementById('pipeline-callouts').innerHTML =
+    `<div class="pl-callout"><h3>${t(PIPELINE.loops.title)}</h3><p>${t(PIPELINE.loops.body)}</p></div>` +
+    `<div class="pl-callout seam"><h3>${t(PIPELINE.seam.title)}</h3><p>${t(PIPELINE.seam.body)}</p></div>`;
 }
 
 /* ---- Loop diagram -------------------------------------------------------- */
