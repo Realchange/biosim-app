@@ -1,0 +1,12 @@
+.group { margin-bottom: 4px; }
+.presetRow { display: flex; align-items: center; gap: 4px; }
+.chevron { background: none; border: none; color: #8b949e; cursor: pointer; width: 18px; padding: 0; }
+.presetButton { flex: 1; text-align: left; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 6px 8px; cursor: pointer; }
+.infoButton { background: none; border: none; color: #8b949e; cursor: pointer; }
+.setupRow { display: flex; align-items: center; gap: 4px; margin: 3px 0 3px 22px; }
+.setupButton { flex: 1; text-align: left; background: #1b1f24; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.iconBtn { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 12px; }
+.lock { color: #8b949e; font-size: 12px; padding: 0 4px; }
+.empty { color: #6e7681; font-size: 11px; margin: 3px 0 3px 22px; }
+.actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.actionBtn { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 6px 8px; cursor: pointer; font-size: 12px; }
