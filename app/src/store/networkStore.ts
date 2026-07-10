@@ -1,11 +1,14 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 import type {
-  Neuron, Synapse, Network, AppMode, Electrode, Compartment, SimulationParams,
+  Neuron, Synapse, Network, AppMode, Electrode, Compartment, SimulationParams, SavedSetup,
 } from '@biosim/core'
 import {
   DEFAULT_LIF_PARAMS, DEFAULT_HH_PARAMS, DEFAULT_GRADED_PARAMS, DEFAULT_STG_PARAMS, DEFAULT_SYNAPSE,
+  BUNDLED_SETUPS,
 } from '@biosim/core'
+import { saveUserSetup, listUserSetups, deleteUserSetup, derivePresetName } from '../utils/savedSetups'
+import { downloadSetup, uploadSetup } from '../utils/fileIO'
 
 export type NeuronModel = 'lif' | 'hodgkin-huxley' | 'graded' | 'stg'
 export type EditorTool = 'select' | 'synapse' | 'spiking' | 'nonspiking' | 'afferent'
@@ -36,6 +39,8 @@ interface NetworkState {
   traces: VoltageTrace[]
   currentTraces: CurrentTrace[]
   loadedNetwork: Network | null   // the last loaded preset/file (for "reset to preset")
+  currentPresetName: string | null   // base preset of the current state (for grouping saves)
+  userSetups: SavedSetup[]           // user setups loaded from localStorage
   graphWindowMs: number           // width of the scrolling graph window (also sets live resolution)
   sim: SimState
   activity: Record<string, number>   // per-neuron smoothed firing activity (0..1) for the glow
@@ -67,16 +72,23 @@ interface NetworkState {
   setEditorModel: (model: EditorModel) => void
   clearNetwork: () => void
   loadNetwork: (network: Network) => void
+  saveCurrentSetup: (name: string) => SavedSetup
+  loadSetup: (id: string) => void
+  deleteSetup: (id: string) => void
+  exportSetup: (id: string) => void
+  importSetup: () => Promise<void>
   getInitialState: () => NetworkState
 }
 
-const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'networkName' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'loadedNetwork' | 'graphWindowMs' | 'sim' | 'activity' | 'editorTool' | 'editorModel'> = {
+const INITIAL: Pick<NetworkState, 'neurons' | 'synapses' | 'simulationParams' | 'networkName' | 'mode' | 'selectedId' | 'electrodes' | 'traces' | 'currentTraces' | 'loadedNetwork' | 'currentPresetName' | 'userSetups' | 'graphWindowMs' | 'sim' | 'activity' | 'editorTool' | 'editorModel'> = {
   neurons: [], synapses: [],
   simulationParams: { length: 100, step: 0.1 },
   networkName: 'Neue Simulation',
   mode: 'presentation',
   selectedId: null, electrodes: [], traces: [], currentTraces: [],
   loadedNetwork: null,
+  currentPresetName: null,
+  userSetups: [],
   graphWindowMs: 1000,
   sim: { running: false, paused: false, t: 0, loop: false, speed: 16, live: false },
   activity: {},
@@ -92,6 +104,7 @@ function capPoints(points: [number, number][]): [number, number][] {
 
 export const useNetworkStore = create<NetworkState>()((set, get) => ({
   ...INITIAL,
+  userSetups: listUserSetups(),   // hydrate from localStorage on startup
 
   getInitialState: () => ({ ...get(), ...INITIAL }),
 
@@ -239,10 +252,47 @@ export const useNetworkStore = create<NetworkState>()((set, get) => ({
       simulationParams: network.simulation,
       networkName: network.name || 'Neue Simulation',
       loadedNetwork: network,
+      currentPresetName: derivePresetName(network),
       selectedId: network.neurons.length > 0 ? network.neurons[0].id : null,
       electrodes,
       traces: electrodes.map(e => ({ neuronId: e.neuronId, compartment: e.compartment, points: [] })),
       currentTraces: measuredNeurons.map(neuronId => ({ neuronId, points: [] })),
     })
+  },
+
+  saveCurrentSetup: (name) => {
+    const s = get()
+    const network: Network = {
+      version: 1, name: s.networkName,
+      neurons: s.neurons, synapses: s.synapses,
+      simulation: s.simulationParams, electrodes: s.electrodes,
+    }
+    const saved = saveUserSetup(name, s.currentPresetName, network)
+    set({ userSetups: listUserSetups() })
+    return saved
+  },
+
+  loadSetup: (id) => {
+    const all = [...BUNDLED_SETUPS, ...get().userSetups]
+    const setup = all.find(x => x.id === id)
+    if (!setup) return
+    get().loadNetwork(setup.network)          // replaces network, sets currentPresetName from name
+    set({ currentPresetName: setup.presetName }) // override with the setup's own group
+  },
+
+  deleteSetup: (id) => {
+    deleteUserSetup(id)
+    set({ userSetups: listUserSetups() })
+  },
+
+  exportSetup: (id) => {
+    const setup = [...BUNDLED_SETUPS, ...get().userSetups].find(x => x.id === id)
+    if (setup) downloadSetup(setup)
+  },
+
+  importSetup: async () => {
+    const { name, presetName, network } = await uploadSetup()
+    saveUserSetup(name, presetName, network)
+    set({ userSetups: listUserSetups() })
   },
 }))

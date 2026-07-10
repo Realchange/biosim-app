@@ -23,6 +23,7 @@ export type {
   SimulationParams,
   Network,
   Electrode,
+  SavedSetup,
 } from './types'
 export {
   COMPARTMENT_COLORS,
@@ -45,6 +46,7 @@ export { swimRhythmPreset } from './presets/swim-rhythm'
 export { pyloricPreset } from './presets/pyloric'
 export { xolotlBurstPreset } from './presets/xolotl-burst'
 export { xolotlHcoPreset } from './presets/xolotl-hco'
+export { BUNDLED_SETUPS } from './presets/setups'
 
 
 // --- Deterministic simulation engine (used by the frontend Worker and the sim adapter) ---

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useNetworkStore } from './networkStore'
+import { pyloricPreset } from '@biosim/core'
 
 beforeEach(() => {
   useNetworkStore.setState(useNetworkStore.getInitialState())
@@ -88,5 +89,37 @@ describe('networkStore', () => {
     const { simulationParams } = useNetworkStore.getState()
     expect(simulationParams.length).toBe(500)
     expect(simulationParams.step).toBe(0.1)
+  })
+})
+
+describe('saved setups in the store', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('loadNetwork sets currentPresetName from a known preset', () => {
+    useNetworkStore.getState().loadNetwork(pyloricPreset)
+    expect(useNetworkStore.getState().currentPresetName).toBe('Pylorisches Netzwerk')
+  })
+
+  it('saveCurrentSetup snapshots the live state under the current preset', () => {
+    useNetworkStore.getState().loadNetwork(pyloricPreset)
+    const saved = useNetworkStore.getState().saveCurrentSetup('Mein Zustand')
+    expect(saved.presetName).toBe('Pylorisches Netzwerk')
+    const { userSetups } = useNetworkStore.getState()
+    expect(userSetups.map(s => s.name)).toContain('Mein Zustand')
+  })
+
+  it('loadSetup replaces the network and sets the setup preset group', () => {
+    useNetworkStore.getState().loadNetwork(pyloricPreset)
+    const saved = useNetworkStore.getState().saveCurrentSetup('S')
+    useNetworkStore.getState().clearNetwork()
+    useNetworkStore.getState().loadSetup(saved.id)
+    expect(useNetworkStore.getState().neurons.length).toBe(pyloricPreset.neurons.length)
+    expect(useNetworkStore.getState().currentPresetName).toBe('Pylorisches Netzwerk')
+  })
+
+  it('deleteSetup removes it from the store list', () => {
+    const saved = useNetworkStore.getState().saveCurrentSetup('X')
+    useNetworkStore.getState().deleteSetup(saved.id)
+    expect(useNetworkStore.getState().userSetups.find(s => s.id === saved.id)).toBeUndefined()
   })
 })
