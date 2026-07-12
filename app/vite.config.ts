@@ -4,7 +4,11 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
 // https://vite.dev/config/
-export default defineConfig({
+// `base` is applied only to the production build: GitHub Pages serves the app under the
+// repo subpath /biosim-app/. Local dev (`vite serve`) and tests keep base '/', so
+// `npm run dev` stays at http://localhost:5173/ and cloning + running locally is unaffected.
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/biosim-app/' : '/',
   plugins: [react()],
   // Resolve the workspace core to its TypeScript source so the frontend uses a
   // single source of truth with no separate build step (mirrors tsconfig paths).
@@ -22,4 +26,4 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
-})
+}))

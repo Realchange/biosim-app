@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import type { Network } from '../types'
 import { BUNDLED_SETUPS } from './setups'
 import { pyloricPreset } from './pyloric'
 
-const abpdGNa = (net: { neurons: { id: string; params: Record<string, unknown> }[] }) =>
-  net.neurons.find(n => n.id === 'abpd')!.params.gNa as number
+const abpdGNa = (net: Network) =>
+  (net.neurons.find(n => n.id === 'abpd')!.params as { gNa: number }).gNa
 
 describe('BUNDLED_SETUPS', () => {
   it('ships a pyloric collapsed-rhythm example grouped under the pyloric preset', () => {

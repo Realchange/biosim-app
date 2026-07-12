@@ -1,0 +1,71 @@
+name: Deploy to GitHub Pages
+
+# Build the simulation app and publish it to GitHub Pages on every push to main.
+# Layout on Pages (https://realchange.github.io/biosim-app/):
+#   /            -> the simulation app (app/dist, built with base '/biosim-app/')
+#   /reader/     -> the H5/H6 reader site (docs/)
+# Pages source is switched from the legacy /docs branch source to "GitHub Actions"
+# by the configure-pages step below.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least-privilege permissions the Pages deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes an in-flight run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the app
+        run: npm run build   # core type-check + app build -> app/dist
+
+      - name: Assemble the Pages site (app at root, reader under /reader)
+        run: |
+          rm -rf _site
+          mkdir -p _site/reader
+          cp -r app/dist/. _site/
+          cp -r docs/index.html docs/assets docs/data _site/reader/
+
+      - name: Configure Pages (switch source to GitHub Actions)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
